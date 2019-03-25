@@ -3,78 +3,76 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdbool.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include "variables.h"
+
+struct forensic fs;
+
+void init(struct forensic *aux){
+    aux->output_file = NULL;
+    aux->execution_register = NULL;
+    aux->md5 = false;
+    aux->sha1 = false;
+    aux->sha256 = false;
+    aux->r_flag = false;
+}
 
 int main(int argc, char const *argv[], char * envp[])
 {
-    
-    char *file_name;
-    char *directory;
-    char *output_file;
-    char *execution_register = NULL;
-    bool md5 = false; 
-    bool sha1 = false;
-    bool sha256 = false;
+    init(&fs);
     char *token;
     char *delim = ",";
-    bool dir_flag = false;
 
     //char error_message[] = "Usage: forensic [-r] [-h [md5[,sha1[,sha256]]] [-o <outfile>] [-v] <file|dir>\n";
 
-    printf("%d\n", argc);
-
-    for(size_t i = 0; i < argc; i++){
+    for(size_t i = 0; i < argc-1; i++){
 
         //directory
         if(strcmp(argv[i], "-r") == 0){
-            directory = (char *) malloc(sizeof(char)*strlen(argv[i+1]));
-            if(directory == NULL){
-                perror("directory");
-                exit(1);
+
+            if(stat(argv[argc-1], &fs.last) != 0){
+                perror("directory stat");
+                exit(EXIT_FAILURE);
             }
-
-            strcpy(directory, argv[argc-1]);
             i++;
-            dir_flag = true;
-
-            continue;
+            fs.r_flag = true;
         }
 
         //output_file
-        if(strcmp(argv[i], "-o") == 0){
-            output_file = (char *) malloc(sizeof(char) * strlen(argv[i+1]));
-            if(output_file == NULL){
+        else if(strcmp(argv[i], "-o") == 0){
+            fs.output_file = (char *) malloc(sizeof(char) * strlen(argv[i+1]));
+            if(fs.output_file == NULL){
                 perror("output_file");
-                exit(1);
+                exit(EXIT_FAILURE);
             }
 
-            strcpy(output_file, argv[i+1]);
+            strcpy(fs.output_file, argv[i+1]);
             i++;
 
-            continue;
         }
 
         //execution register
-        if(strcmp(argv[i], "-v") == 0){
-            execution_register = malloc(sizeof(char) * strlen(getenv("LOGFILENAME")));
-            if(execution_register == NULL){
+        else if(strcmp(argv[i], "-v") == 0){
+            fs.execution_register = malloc(sizeof(char) * strlen(getenv("LOGFILENAME")));
+            if(fs.execution_register == NULL){
                 perror("execution_register");
                 exit(1);
             }
 
-            strcpy (execution_register, getenv("LOGFILENAME="));
+            strcpy (fs.execution_register, getenv("LOGFILENAME="));
 
-            continue;
         }
 
         //digital prints
-        if (strcmp(argv[i], "-h") == 0) {
+        else if (strcmp(argv[i], "-h") == 0) {
             token = strtok((char *)argv[i+1], delim);
             
              while(token != NULL) {
 
-                if(strcmp(token, "md5") == 0) md5 = true;
-                if(strcmp(token, "sha1") == 0) sha1 = true;
-                if(strcmp(token, "sha256") == 0) sha256 = true;
+                if(strcmp(token, "md5") == 0) fs.md5 = true;
+                if(strcmp(token, "sha1") == 0) fs.sha1 = true;
+                if(strcmp(token, "sha256") == 0) fs.sha256 = true;
 
                 token = strtok(NULL, delim);
             }
@@ -82,19 +80,17 @@ int main(int argc, char const *argv[], char * envp[])
             printf("\n");
 
             i++;
-            continue;
+        }
+    }
+
+    //it can be a file or a dir. Its not recursive.
+    if(!fs.r_flag){
+        if(stat(argv[argc-1], &fs.last) != 0){
+            perror("file|directory stat");
+            exit(EXIT_FAILURE);
         }
 
-        //file_name
-        if(i == (argc-1) && !dir_flag){
-            file_name = (char *) malloc(sizeof(char) * strlen(argv[i]));
-            if(file_name == NULL){
-                perror("file_name");
-                exit(1);
-            }
-
-            strcpy(file_name, argv[i]);
-        }
+        //check if dir.
     }
     
 
