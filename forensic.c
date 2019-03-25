@@ -86,9 +86,8 @@ int main(int argc, char const *argv[], char * envp[])
             continue;
         }
 
-        /*
         //file_name
-        if(i == (argc-1)){
+        if(i == argc){
             file_name = (char *) malloc(sizeof(char) * strlen(argv[i]));
             if(file_name == NULL){
                 perror("file_name");
@@ -97,7 +96,6 @@ int main(int argc, char const *argv[], char * envp[])
 
             printf("%s\n", file_name);
         }
-        */
     }
     
 
