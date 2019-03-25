@@ -18,9 +18,7 @@ void init(struct forensic *aux){
     aux->r_flag = false;
 }
 
-int main(int argc, char const *argv[], char * envp[])
-{
-    init(&fs);
+void parsingArg(int argc, char const *argv[], char * envp[]){
     char *token;
     char *delim = ",";
 
@@ -68,7 +66,7 @@ int main(int argc, char const *argv[], char * envp[])
         else if (strcmp(argv[i], "-h") == 0) {
             token = strtok((char *)argv[i+1], delim);
             
-             while(token != NULL) {
+                while(token != NULL) {
 
                 if(strcmp(token, "md5") == 0) fs.md5 = true;
                 if(strcmp(token, "sha1") == 0) fs.sha1 = true;
@@ -92,6 +90,18 @@ int main(int argc, char const *argv[], char * envp[])
 
         //check if dir.
     }
+
+
+}
+
+int main(int argc, char const *argv[], char * envp[])
+{
+    init(&fs);
+    
+    parsingArg(argc, argv, envp);
+
+    //check if file
+    //if(fs.last.st_mode & S)
     
 
     //file_type
