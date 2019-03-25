@@ -16,6 +16,7 @@ int main(int argc, char const *argv[], char * envp[])
     bool sha256 = false;
     char *token;
     char *delim = ",";
+    bool dir_flag = false;
 
     //char error_message[] = "Usage: forensic [-r] [-h [md5[,sha1[,sha256]]] [-o <outfile>] [-v] <file|dir>\n";
 
@@ -31,9 +32,9 @@ int main(int argc, char const *argv[], char * envp[])
                 exit(1);
             }
 
-            strcpy(directory, argv[i+1]);
+            strcpy(directory, argv[argc-1]);
             i++;
-            printf("%s\n", directory);
+            dir_flag = true;
 
             continue;
         }
@@ -49,7 +50,6 @@ int main(int argc, char const *argv[], char * envp[])
             strcpy(output_file, argv[i+1]);
             i++;
 
-            printf("%s\n", output_file);
             continue;
         }
 
@@ -62,7 +62,6 @@ int main(int argc, char const *argv[], char * envp[])
             }
 
             strcpy (execution_register, getenv("LOGFILENAME="));
-            printf("%s\n", execution_register);
 
             continue;
         }
@@ -77,24 +76,24 @@ int main(int argc, char const *argv[], char * envp[])
                 if(strcmp(token, "sha1") == 0) sha1 = true;
                 if(strcmp(token, "sha256") == 0) sha256 = true;
 
-                printf("%s,", token );
-
                 token = strtok(NULL, delim);
             }
+
+            printf("\n");
 
             i++;
             continue;
         }
 
         //file_name
-        if(i == argc){
+        if(i == (argc-1) && !dir_flag){
             file_name = (char *) malloc(sizeof(char) * strlen(argv[i]));
             if(file_name == NULL){
                 perror("file_name");
                 exit(1);
             }
 
-            printf("%s\n", file_name);
+            strcpy(file_name, argv[i]);
         }
     }
     
