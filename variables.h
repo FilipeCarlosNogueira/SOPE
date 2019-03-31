@@ -21,4 +21,13 @@ struct forensic
     bool r_flag;
 };
 
+void init(struct forensic *aux){
+    aux->output_file = NULL;
+    aux->execution_register = NULL;
+    aux->md5 = false;
+    aux->sha1 = false;
+    aux->sha256 = false;
+    aux->r_flag = false;
+}
+
 #endif

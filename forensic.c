@@ -6,18 +6,13 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <time.h> 
+#include <dirent.h>
+
 #include "variables.h"
+#include "file.h"
+#include "interface.h"
 
 struct forensic fs;
-
-void init(struct forensic *aux){
-    aux->output_file = NULL;
-    aux->execution_register = NULL;
-    aux->md5 = false;
-    aux->sha1 = false;
-    aux->sha256 = false;
-    aux->r_flag = false;
-}
 
 void parsingArg(int argc, char const *argv[], char * envp[]){
     char *token;
@@ -29,13 +24,6 @@ void parsingArg(int argc, char const *argv[], char * envp[]){
 
         //directory
         if(strcmp(argv[i], "-r") == 0){
-            fs.name = (char *) malloc(sizeof(char) * strlen(argv[argc-1]));
-            strcpy(fs.name, argv[argc-1]);
-
-            if(stat(argv[argc-1], &fs.last) != 0){
-                perror("directory stat");
-                exit(EXIT_FAILURE);
-            }
             i++;
             fs.r_flag = true;
         }
@@ -84,126 +72,14 @@ void parsingArg(int argc, char const *argv[], char * envp[]){
         }
     }
 
-    //it can be a file or a dir. Its not recursive.
-    if(!fs.r_flag){
-        fs.name = (char *) malloc(sizeof(char) * strlen(argv[argc-1]));
-        strcpy(fs.name, argv[argc-1]);
+    //it can be a file or a dir.
+    fs.name = (char *) malloc(sizeof(char) * strlen(argv[argc-1]));
+    strcpy(fs.name, argv[argc-1]);
 
-        if(stat(argv[argc-1], &fs.last) != 0){
-            perror("file|directory stat");
-            exit(EXIT_FAILURE);
-        }
+    if(stat(fs.name, &fs.last) != 0){
+        perror("file|directory stat");
+        exit(EXIT_FAILURE);
     }
-
-
-}
-
-void file_type(){
-    FILE *fp;
-    char path[1035];
-    char command[50];
-
-    strcpy(command, "file ");
-    strcat(command, fs.name);
-
-    /* Open the command for reading. */
-    fp = popen(command, "r");
-    if (fp == NULL) {
-        perror("popen()");
-        exit(1);
-    }
-
-    /* Read the output a line at a time - output it. */
-    if(fgets(path, sizeof(path)-1, fp) == NULL) {
-        perror("");
-        exit (1);
-    }
-
-    //trim path string
-    if(path[strlen(path)-1] == '\n')
-        path[strlen(path)-1] = '\0';
-    
-    //remove file name from path string
-    strtok(path, " ");
-    printf("%s,", strtok(NULL, "\n"));
-
-    /* close */
-    pclose(fp);
-}
-
-void algorithm(char *algm){
-    FILE *fp;
-    char path[1035];
-    char command[50];
-
-    strcpy(command, algm);
-    strcat(command, "sum ");
-    strcat(command, fs.name);
-
-    /* Open the command for reading. */
-    fp = popen(command, "r");
-    if (fp == NULL) {
-        perror("popen()");
-        exit(1);
-    }
-
-    /* Read the output a line at a time - output it. */
-    if(fgets(path, sizeof(path)-1, fp) == NULL) {
-        perror("");
-        exit (1);
-    }
-
-    //trim path string
-    if(path[strlen(path)-1] == '\n')
-        path[strlen(path)-1] = '\0';
-    
-    //remove file name from path string
-    printf("%s,", strtok(path, " "));
-
-    /* close */
-    pclose(fp);
-}
-
-void print_data(){
-
-    char buff[20];
-    time_t now;
-
-    //file_name
-    printf("%s,", fs.name);
-
-    //file_type
-    file_type();
-
-    //file_size
-    printf("%lld,", (long long) fs.last.st_size);
-
-    //file_access
-
-    //file_created_date
-    now = time(&fs.last.st_birthtime);
-    strftime(buff, 20, "%FT%T", localtime(&now));
-    printf("%s,", buff);
-
-    //file_modification_date
-    now = time(&fs.last.st_mtime);
-    strftime(buff, 20, "%FT%T", localtime(&now));
-    printf("%s,", buff);
-
-    //md5
-    if(fs.md5){
-        algorithm("md5");
-    }
-    //sha1
-    if(fs.sha1){
-        algorithm("sha1");
-    }
-    //sha256
-    if(fs.sha256){
-        algorithm("sha256");
-    }
-
-    printf("\n");
 }
 
 int main(int argc, char const *argv[], char * envp[])
