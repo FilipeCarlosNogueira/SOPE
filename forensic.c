@@ -90,11 +90,7 @@ int main(int argc, char const *argv[], char * envp[])
     parsingArg(argc, argv, envp);
 
     //Extrair a informação solicitada de apenas um ficheiro e imprimi-la na saída padrão de acordo com os argumentos passados.
-    print_data();
-
-    //check if file
-    //if(fs.last.st_mode & S)
-
+    recurs(&fs);
 
     return 0;
 }

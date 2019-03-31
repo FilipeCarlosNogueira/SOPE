@@ -10,10 +10,12 @@
 
 #include "variables.h"
 #include "file.h"
+#include "interface.h"
 
+//parses all perminent information to the son struct
 void parse_parent_son(struct forensic *son, struct forensic *parent){
     //it can be a file or a dir.
-    if(stat(son.name, &son.last) != 0){
+    if(stat(son->name, &son->last) != 0){
         perror("file|directory stat");
         exit(EXIT_FAILURE);
     }
@@ -31,31 +33,38 @@ void parse_parent_son(struct forensic *son, struct forensic *parent){
 }
 
 void recurs(struct forensic *parent){
-    struct  dirent *de;
-    
     //if dir
-    if((parent.last.st_mode & S_IFMT) == S_IFDIR){
-        DIR *dr = opendir(fs.name);
+    if((parent->last.st_mode & S_IFMT) == S_IFDIR){
+        struct dirent *de;
+        DIR *dr = opendir(parent->name);
 
-        if(parent->r_flag){
+        //opens all files in the current directory
+        while((de = readdir(dr)) != NULL){
+            struct forensic son;
 
-        }
-        else{
-            //opens all files in the current directory 
-            while((de = readdir(dr)) != NULL){
-                struct forensic son;
-                init(&son);
-                son.name = (char *) malloc(sizeof(char) * strlen(de->d_name));
-                strcpy(son.name, de->d_name);
-                son_struct(son, fs);
-
-                recurs(&son);
-            }
+            //inicializes son's variables.
+            init(&son);
             
-        }
+            //saves name
+            printf("%s\n", de->d_name);
+            son.name = (char *) malloc(sizeof(char) * strlen(de->d_name));
+            strcpy(son.name, de->d_name);
+            printf("%s\n", son.name);
+            printf("1\n");
+
+            //parses all perminent information to the son struct
+            parse_parent_son(&son, parent);
+            printf("1\n");
+            //the user wants recursive 
+            if(parent->r_flag)
+                recurs(&son);
+            
+            //the user doesn't want recursive
+            else print_data(&son);
+        } 
     }
     //if file
     else{
-        print_data();
+        print_data(parent);
     }
 }

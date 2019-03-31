@@ -9,6 +9,7 @@
 #include <dirent.h>
 
 #include "variables.h"
+#include "file.h"
 
 /*
 * This file computes all the output information regarding a single file. 
@@ -22,7 +23,7 @@ void file_type(char *result){
     char command[50];
 
     strcpy(command, "file ");
-    strcat(command, current.name);
+    strcat(command, current->name);
 
     /* Open the command for reading. */
     fp = popen(command, "r");
@@ -49,6 +50,7 @@ void file_type(char *result){
 
     /* close */
     pclose(fp);
+
 }
 
 char *algorithm(char *algm, char *result){
@@ -58,7 +60,7 @@ char *algorithm(char *algm, char *result){
 
     strcpy(command, algm);
     strcat(command, "sum ");
-    strcat(command, current.name);
+    strcat(command, current->name);
 
     /* Open the command for reading. */
     fp = popen(command, "r");
@@ -90,14 +92,14 @@ char *algorithm(char *algm, char *result){
 void print_data(struct forensic *new){
     //inicialize the current file
     current = new;
-    
+
     FILE *fp;
     char buff[20];
     time_t now;
  
     //file_name
-    char *result = (char *) malloc(sizeof(char )*strlen(current.name));
-    strcpy(result, current.name);
+    char *result = (char *) malloc(sizeof(char )*strlen(current->name));
+    strcpy(result, current->name);
     strcat(result, ",");
 
     //file_type
@@ -106,17 +108,17 @@ void print_data(struct forensic *new){
 
     //file_size
     char aux[50];
-    sprintf(aux, "%lld", (long long) current.last.st_size);
+    sprintf(aux, "%lld", (long long) current->last.st_size);
     result = (char *) realloc(result, strlen(result)+strlen(aux)+1);
     strcat(result, aux);
     strcat(result, ",");
 
     //file_access
-    if(access(current.name, R_OK) == 0){ //read access
+    if(access(current->name, R_OK) == 0){ //read access
         result = (char *) realloc(result, strlen(result)+strlen("r")+1);
         strcat(result, "r"); 
     }
-    if(access(current.name, W_OK) == 0){ //write access
+    if(access(current->name, W_OK) == 0){ //write access
         result = (char *) realloc(result, strlen(result)+strlen("w")+1);
         strcat(result, "w"); 
     }
@@ -124,32 +126,32 @@ void print_data(struct forensic *new){
     strcat(result, ",");
 
     //file_created_date
-    now = time(&current.last.st_birthtime);
+    now = time(&current->last.st_birthtime);
     strftime(buff, 20, "%FT%T", localtime(&now));
     result = (char *) realloc(result, strlen(result)+strlen(buff)+1);
     strcat(result, buff);
     strcat(result, ",");
 
     //file_modification_date
-    now = time(&current.last.st_mtime);
+    now = time(&current->last.st_mtime);
     strftime(buff, 20, "%FT%T", localtime(&now));
     result = (char *) realloc(result, strlen(result)+strlen(buff)+1);
     strcat(result, buff);
 
     //md5
-    if(current.md5){
+    if(current->md5){
         result = (char *) realloc(result, strlen(result)+1);
         strcat(result, ",");
         algorithm("md5", result);
     }
     //sha1
-    if(current.sha1){
+    if(current->sha1){
         result = (char *) realloc(result, strlen(result)+1);
         strcat(result, ",");
         algorithm("sha1", result);
     }
     //sha256
-    if(current.sha256){
+    if(current->sha256){
         result = (char *) realloc(result, strlen(result)+1);
         strcat(result, ",");
         algorithm("sha256", result);
@@ -159,8 +161,8 @@ void print_data(struct forensic *new){
     strcat(result, "\n");
 
     //check if output file was specified
-    if(current.output_file != NULL){
-        fp = fopen(current.output_file, "w");
+    if(current->output_file != NULL){
+        fp = fopen(current->output_file, "w");
         fprintf(fp, "%s\n", result);
     }
     else{
