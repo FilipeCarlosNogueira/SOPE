@@ -12,6 +12,7 @@
 struct forensic
 {
     struct stat last;
+    char *name;
     char *output_file;
     char *execution_register;
     bool md5;
