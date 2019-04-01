@@ -14,7 +14,7 @@
 #include "variables.h"
 #include "file.h"
 
-void parse_parent_son(struct forensic *son, struct forensic *parent);
+int parse_parent_son(struct forensic *son, struct forensic *parent);
 void recurs(struct forensic *parent);
 
 #endif

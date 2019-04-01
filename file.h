@@ -16,7 +16,7 @@
 
 void file_type(char *result);
 char *algorithm(char *algm, char *result);
-void print_data();
+void print_data(struct forensic *new, char *subfolder);
 
 
 #endif

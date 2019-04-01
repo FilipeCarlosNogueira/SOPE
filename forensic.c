@@ -39,6 +39,8 @@ void parsingArg(int argc, char const *argv[], char * envp[]){
             strcpy(fs.output_file, argv[i+1]);
             i++;
 
+            printf("Data saved on file %s\n", fs.output_file);
+            printf("Execution records saved on file ...\n");
         }
 
         //execution register

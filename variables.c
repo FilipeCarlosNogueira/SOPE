@@ -9,6 +9,7 @@
 #include "variables.h"
 
 void init(struct forensic *aux){
+    aux->name = NULL;
     aux->output_file = NULL;
     aux->execution_register = NULL;
     aux->md5 = false;

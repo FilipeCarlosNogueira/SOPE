@@ -50,7 +50,6 @@ void file_type(char *result){
 
     /* close */
     pclose(fp);
-
 }
 
 char *algorithm(char *algm, char *result){
@@ -89,7 +88,17 @@ char *algorithm(char *algm, char *result){
     return token;
 }
 
-void print_data(struct forensic *new){
+void print_data(struct forensic *new, char *subfolder){
+    char *result = NULL;
+    if(subfolder != NULL){
+        result = (char *) malloc(sizeof(char )*strlen(subfolder)+1);
+        strcpy(result, subfolder);
+        strcat(result, "/");
+    }
+    else{
+        result = (char *) malloc(sizeof(char));
+    }
+
     //inicialize the current file
     current = new;
 
@@ -98,12 +107,13 @@ void print_data(struct forensic *new){
     time_t now;
  
     //file_name
-    char *result = (char *) malloc(sizeof(char )*strlen(current->name));
-    strcpy(result, current->name);
+    result = (char *) realloc(result, strlen(result)+strlen(current->name)+1);
+    strcat(result, current->name);
     strcat(result, ",");
 
     //file_type
     file_type(result);
+    result = (char *) realloc(result, strlen(result)+1);
     strcat(result, ",");
 
     //file_size
@@ -168,4 +178,6 @@ void print_data(struct forensic *new){
     else{
         printf("%s\n", result);
     }
+
+    free(result);
 }
