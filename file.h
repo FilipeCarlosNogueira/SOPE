@@ -14,8 +14,8 @@
 #include "variables.h"
 #include "file.h"
 
-void file_type(char *result);
-char *algorithm(char *algm, char *result);
+char *file_type();
+char *algorithm(char *algm);
 void print_data(struct forensic *new, char *subfolder);
 
 

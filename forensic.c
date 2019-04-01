@@ -40,7 +40,6 @@ void parsingArg(int argc, char const *argv[], char * envp[]){
             i++;
 
             printf("Data saved on file %s\n", fs.output_file);
-            printf("Execution records saved on file ...\n");
         }
 
         //execution register
@@ -52,7 +51,8 @@ void parsingArg(int argc, char const *argv[], char * envp[]){
             }
 
             strcpy (fs.execution_register, getenv("LOGFILENAME="));
-
+            
+            printf("Execution records saved on file %s\n", fs.execution_register);
         }
 
         //digital prints

@@ -13,15 +13,23 @@
 #include "interface.h"
 
 //parses all perminent information to the son struct
-int parse_parent_son(struct forensic *son, struct forensic *parent){
+void parse_parent_son(struct forensic *son, struct forensic *parent){
 
     if(parent->output_file != NULL){
-        son->output_file = (char *) malloc(sizeof(char)*strlen(parent->output_file));
+        son->output_file = (char *) malloc(sizeof(char)*(strlen(parent->output_file)+strlen(parent->name)+1));
+        if(son->output_file == NULL){
+            perror("son->output");
+            exit(1);
+        }
         strcpy(son->output_file, parent->output_file);
     }
 
     if(parent->execution_register != NULL){
         son->execution_register = (char *) malloc(sizeof(char)*strlen(parent->execution_register));
+         if(son->execution_register == NULL){
+            perror("son->execution_register");
+            exit(1);
+        }
         strcpy(son->execution_register, parent->execution_register);
     }
 
@@ -32,10 +40,9 @@ int parse_parent_son(struct forensic *son, struct forensic *parent){
 
     //it can be a file or a dir.
     if(stat(son->name, &son->last) != 0){
-        return 1;
+        perror("stat son");
+        exit(1);
     }
-
-    return 0;
 }
 
 void recurs(struct forensic *parent){
@@ -70,12 +77,15 @@ void recurs(struct forensic *parent){
             printf("** %s\n", son.name);
 
             //parses all perminent information to the son struct
-            if(parse_parent_son(&son, parent)){
+            parse_parent_son(&son, parent);
 
-                //if its a directory, it creates a seperate process to compute it 
-                if(parent->r_flag){ //the user wants recursive
-                printf("1\n");
+            //if the element in consideration is an directory
+            if((son.last.st_mode & S_IFMT) == S_IFDIR){
+                
+                //the user wants recursive
+                if(parent->r_flag){
                     pid_t pid;
+                    //it creates a seperate process to compute it.
                     if((pid = fork()) == 0){
                         recurs(&son);
                         exit(0);
@@ -85,9 +95,8 @@ void recurs(struct forensic *parent){
             }
             //if its a file, it print automatically
             else if(((son.last.st_mode & S_IFMT) == S_IFREG)){
-                print_data(&son, NULL);
+                print_data(&son, parent->name);
             }
-
         }
         closedir(dr);
     }

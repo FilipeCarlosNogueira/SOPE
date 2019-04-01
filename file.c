@@ -17,7 +17,7 @@
 
 struct forensic *current;
 
-void file_type(char *result){
+char *file_type(){
     FILE *fp;
     char path[1035];
     char command[50];
@@ -45,14 +45,14 @@ void file_type(char *result){
     //remove file name from path string
     strtok(path, " ");
     char *token = strtok(NULL, "\n");
-    result = (char *) realloc(result, sizeof(strlen(result)+strlen(token)+1));
-    strcat(result, token);
 
     /* close */
     pclose(fp);
+
+    return token;
 }
 
-char *algorithm(char *algm, char *result){
+char *algorithm(char *algm){
     FILE *fp;
     char path[1035];
     char command[50];
@@ -79,8 +79,8 @@ char *algorithm(char *algm, char *result){
         path[strlen(path)-1] = '\0';
     
     //remove file name from path string
-    char *token = strtok(path, " ");
-    result = (char *) realloc(result, strlen(result)+strlen(token));
+    strtok(path, "=");
+    char *token = strtok(NULL, " ");
 
     /* close */
     pclose(fp);
@@ -89,14 +89,10 @@ char *algorithm(char *algm, char *result){
 }
 
 void print_data(struct forensic *new, char *subfolder){
-    char *result = NULL;
+    char result[200] = "";
     if(subfolder != NULL){
-        result = (char *) malloc(sizeof(char )*strlen(subfolder)+1);
         strcpy(result, subfolder);
         strcat(result, "/");
-    }
-    else{
-        result = (char *) malloc(sizeof(char));
     }
 
     //inicialize the current file
@@ -107,67 +103,55 @@ void print_data(struct forensic *new, char *subfolder){
     time_t now;
  
     //file_name
-    result = (char *) realloc(result, strlen(result)+strlen(current->name)+1);
     strcat(result, current->name);
     strcat(result, ",");
 
     //file_type
-    file_type(result);
-    result = (char *) realloc(result, strlen(result)+1);
+    strcat(result, file_type());
     strcat(result, ",");
 
     //file_size
     char aux[50];
     sprintf(aux, "%lld", (long long) current->last.st_size);
-    result = (char *) realloc(result, strlen(result)+strlen(aux)+1);
     strcat(result, aux);
     strcat(result, ",");
 
     //file_access
     if(access(current->name, R_OK) == 0){ //read access
-        result = (char *) realloc(result, strlen(result)+strlen("r")+1);
         strcat(result, "r"); 
     }
     if(access(current->name, W_OK) == 0){ //write access
-        result = (char *) realloc(result, strlen(result)+strlen("w")+1);
         strcat(result, "w"); 
     }
-    result = (char *) realloc(result, strlen(result)+1);
     strcat(result, ",");
 
     //file_created_date
     now = time(&current->last.st_birthtime);
     strftime(buff, 20, "%FT%T", localtime(&now));
-    result = (char *) realloc(result, strlen(result)+strlen(buff)+1);
     strcat(result, buff);
     strcat(result, ",");
 
     //file_modification_date
     now = time(&current->last.st_mtime);
     strftime(buff, 20, "%FT%T", localtime(&now));
-    result = (char *) realloc(result, strlen(result)+strlen(buff)+1);
     strcat(result, buff);
 
     //md5
     if(current->md5){
-        result = (char *) realloc(result, strlen(result)+1);
         strcat(result, ",");
-        algorithm("md5", result);
+        strcat(result, algorithm("md5"));
     }
     //sha1
     if(current->sha1){
-        result = (char *) realloc(result, strlen(result)+1);
         strcat(result, ",");
-        algorithm("sha1", result);
+        strcat(result, algorithm("sha1"));
     }
     //sha256
     if(current->sha256){
-        result = (char *) realloc(result, strlen(result)+1);
         strcat(result, ",");
-        algorithm("sha256", result);
+        strcat(result, algorithm("sha256"));
     }
 
-    result = (char *) realloc(result, strlen(result)+1);
     strcat(result, "\n");
 
     //check if output file was specified
@@ -178,6 +162,4 @@ void print_data(struct forensic *new, char *subfolder){
     else{
         printf("%s\n", result);
     }
-
-    free(result);
 }
