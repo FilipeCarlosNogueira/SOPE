@@ -12,14 +12,25 @@
 
 struct forensic
 {
+    //stat struct
     struct stat last;
-    DIR *initial_dir;
-    char *name;
+
+    //parent pid
+    pid_t pid;
+
+    //strings
+    char name[100];
+
+    //file descriptors
     int output_file;
-    char *execution_register;
+    int execution_register;
+
+    //algorithm flags
     bool md5;
     bool sha1;
     bool sha256;
+
+    //recursive flag
     bool r_flag;
 };
 

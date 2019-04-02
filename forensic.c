@@ -15,13 +15,13 @@
 
 struct forensic fs;
 
-void parsingArg(int argc, char const *argv[], char * envp[]){
+void parsingArg(int argc, char const *argv[]){
     char *token;
     char *delim = ",";
 
     //char error_message[] = "Usage: forensic [-r] [-h [md5[,sha1[,sha256]]] [-o <outfile>] [-v] <file|dir>\n";
 
-    for(size_t i = 0; i < argc-1; i++){
+    for(int i = 0; i < argc-1; i++){
 
         //directory
         if(strcmp(argv[i], "-r") == 0){
@@ -38,15 +38,9 @@ void parsingArg(int argc, char const *argv[], char * envp[]){
 
         //execution register
         else if(strcmp(argv[i], "-v") == 0){
-            fs.execution_register = malloc(sizeof(char) * strlen(getenv("LOGFILENAME")));
-            if(fs.execution_register == NULL){
-                perror("execution_register");
-                exit(1);
-            }
-
-            strcpy (fs.execution_register, getenv("LOGFILENAME="));
+            fs.execution_register = open(getenv("LOGFILENAME="), O_WRONLY|O_CREAT|O_APPEND|O_TRUNC, S_IWGRP);
             
-            printf("Execution records saved on file %s\n", fs.execution_register);
+            printf("Execution records saved on file %s\n", getenv("LOGFILENAME="));
         }
 
         //digital prints
@@ -69,21 +63,22 @@ void parsingArg(int argc, char const *argv[], char * envp[]){
     }
 
     //it can be a file or a dir.
-    fs.name = (char *) malloc(sizeof(char) * strlen(argv[argc-1]));
     strcpy(fs.name, argv[argc-1]);
 
-    if(stat(fs.name, &fs.last) != 0){
+    if(lstat(fs.name, &fs.last) != 0){
         perror("file|directory stat");
         exit(EXIT_FAILURE);
     }
 }
 
-int main(int argc, char const *argv[], char * envp[])
+int main(int argc, char const *argv[])
 {
+    sigaction();
+
     init(&fs);
 
     //Receber, tratar e guardar os argumentos e variáveis de ambiente.
-    parsingArg(argc, argv, envp);
+    parsingArg(argc, argv);
 
     //Extrair a informação solicitada de apenas um ficheiro e imprimi-la na saída padrão de acordo com os argumentos passados.
     recurs(&fs);

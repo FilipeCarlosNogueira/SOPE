@@ -98,7 +98,7 @@ void print_data(struct forensic *new, char *subfolder){
     //inicialize the current file
     current = new;
 
-    char buff[20];
+    char buff[50];
     time_t now;
  
     //file_name
@@ -110,9 +110,8 @@ void print_data(struct forensic *new, char *subfolder){
     strcat(result, ",");
 
     //file_size
-    char aux[50];
-    sprintf(aux, "%lld", (long long) current->last.st_size);
-    strcat(result, aux);
+    sprintf(buff, "%lld", (long long) current->last.st_size);
+    strcat(result, buff);
     strcat(result, ",");
 
     //file_access
@@ -126,13 +125,13 @@ void print_data(struct forensic *new, char *subfolder){
 
     //file_created_date
     now = time(&current->last.st_birthtime);
-    strftime(buff, 20, "%FT%T", localtime(&now));
+    strftime(buff, 50, "%FT%T", localtime(&now));
     strcat(result, buff);
     strcat(result, ",");
 
     //file_modification_date
     now = time(&current->last.st_mtime);
-    strftime(buff, 20, "%FT%T", localtime(&now));
+    strftime(buff, 50, "%FT%T", localtime(&now));
     strcat(result, buff);
 
     //md5
@@ -155,4 +154,20 @@ void print_data(struct forensic *new, char *subfolder){
 
     //write result
     write(current->output_file, result, sizeof(result));
+
+    //writes on the execution register file if one was provided
+    char exec_reg[100];
+    
+    if(current->execution_register != -1){
+        //-inst
+        //sprintf(buff, "%d", localtime(&time(NULL)));
+        //-pid
+        sprintf(buff, "- %d", current->pid);
+        strcat(exec_reg, buff);
+        //-act
+        sprintf(buff, "- ANALIZED %s\n", current->name);
+        strcat(exec_reg, buff);
+
+        write(current->execution_register, exec_reg, sizeof(exec_reg));
+    }
 }

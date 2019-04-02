@@ -1,4 +1,4 @@
-CFLAGS	=	-D_HPUX_SOURCE -Wall
+CFLAGS	=	-D_HPUX_SOURCE -Wall -Wextra -Werror
 OBJECTS	=	forensic.o	interface.o	file.o	variables.o
 forensic: $(OBJECTS)
 	gcc $(OBJECTS) -o forensic
