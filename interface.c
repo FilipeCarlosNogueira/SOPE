@@ -15,14 +15,7 @@
 //parses all perminent information to the son struct
 void parse_parent_son(struct forensic *son, struct forensic *parent){
 
-    if(parent->output_file != NULL){
-        son->output_file = (char *) malloc(sizeof(char)*(strlen(parent->output_file)+strlen(parent->name)+1));
-        if(son->output_file == NULL){
-            perror("son->output");
-            exit(1);
-        }
-        strcpy(son->output_file, parent->output_file);
-    }
+    son->output_file = parent->output_file;
 
     if(parent->execution_register != NULL){
         son->execution_register = (char *) malloc(sizeof(char)*strlen(parent->execution_register));
@@ -62,19 +55,19 @@ void recurs(struct forensic *parent){
 
         //opens all files in the current directory
         while((de = readdir(dr)) != NULL){
-            struct forensic son;
+            if(de->d_name[0] == '.'){
+                continue;
+            }
 
             //inicializes son's variables.
+            struct forensic son;
             init(&son);
             
             //saves name
             son.name = (char *) malloc(sizeof(char) * strlen(de->d_name));
             sprintf(son.name, "%s", de->d_name);
-            if(son.name[0] == '.'){
-                continue;
-            }
             
-            printf("** %s\n", son.name);
+            //printf("** %s\n", son.name);
 
             //parses all perminent information to the son struct
             parse_parent_son(&son, parent);

@@ -98,7 +98,6 @@ void print_data(struct forensic *new, char *subfolder){
     //inicialize the current file
     current = new;
 
-    FILE *fp;
     char buff[20];
     time_t now;
  
@@ -154,12 +153,6 @@ void print_data(struct forensic *new, char *subfolder){
 
     strcat(result, "\n");
 
-    //check if output file was specified
-    if(current->output_file != NULL){
-        fp = fopen(current->output_file, "w");
-        fprintf(fp, "%s", result);
-    }
-    else{
-        printf("%s", result);
-    }
+    //write result
+    write(current->output_file, result, sizeof(result));
 }

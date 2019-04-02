@@ -10,7 +10,7 @@
 
 void init(struct forensic *aux){
     aux->name = NULL;
-    aux->output_file = NULL;
+    aux->output_file = STDOUT_FILENO;
     aux->execution_register = NULL;
     aux->md5 = false;
     aux->sha1 = false;
