@@ -79,8 +79,8 @@ char *algorithm(char *algm){
         path[strlen(path)-1] = '\0';
     
     //remove file name from path string
-    strtok(path, "=");
-    char *token = strtok(NULL, " ");
+    //in linux the structer is: (hash code) <file_name>
+    char *token = strtok(path, " ");
 
     /* close */
     pclose(fp);
@@ -89,7 +89,7 @@ char *algorithm(char *algm){
 }
 
 void print_data(struct forensic *new, char *subfolder){
-    char result[200] = "";
+    char result[250] = "";
     if(subfolder != NULL){
         strcpy(result, subfolder);
         strcat(result, "/");
@@ -157,9 +157,9 @@ void print_data(struct forensic *new, char *subfolder){
     //check if output file was specified
     if(current->output_file != NULL){
         fp = fopen(current->output_file, "w");
-        fprintf(fp, "%s\n", result);
+        fprintf(fp, "%s", result);
     }
     else{
-        printf("%s\n", result);
+        printf("%s", result);
     }
 }
