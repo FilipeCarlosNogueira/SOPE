@@ -7,7 +7,7 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <dirent.h>
-#include <wait.h>
+#include <sys/wait.h>
 
 #include "variables.h"
 #include "file.h"
@@ -36,6 +36,10 @@ void parse_parent_son(struct forensic *son, struct forensic *parent){
 
     //saving the first parent pid
     son->pid = parent->pid;
+
+    //saving the moment of the first process
+    son->time = parent->time;
+    son->start = parent->start;
 }
 
 int directory_handler(struct forensic *parent, struct dirent *de){

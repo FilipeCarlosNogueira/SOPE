@@ -126,13 +126,13 @@ void print_data(struct forensic *new, char *subfolder){
 
     //file_created_date
     now = time(&current->last.st_birthtime);
-    strftime(buff, 50, "%FT%T", localtime(&now));
+    strftime(buff, 50, "%FT%T", localtime(&current->last.st_birthtime));
     strcat(result, buff);
     strcat(result, ",");
 
     //file_modification_date
     now = time(&current->last.st_mtime);
-    strftime(buff, 50, "%FT%T", localtime(&now));
+    strftime(buff, 50, "%FT%T", localtime(&current->last.st_mtime));
     strcat(result, buff);
 
     //md5
@@ -158,12 +158,11 @@ void print_data(struct forensic *new, char *subfolder){
 
     //writes on the execution register file if one was provided
     char exec_reg[100];
-    //struct tms *aux = NULL;
     
     if(current->execution_register != -1){
         //-inst
-        // times(aux);
-        // sprintf(buff, "%ld", sysconf(aux->tms_stime));
+        sprintf(buff, "%.2f", ((double) (times(&current->time) - current->start)/sysconf(_SC_CLK_TCK)) * 1000.0);
+        strcpy(exec_reg, buff);
         //-pid
         sprintf(buff, " - %d", current->pid);
         strcat(exec_reg, buff);

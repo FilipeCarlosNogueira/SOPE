@@ -9,11 +9,17 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <sys/times.h>
+
 
 struct forensic
 {
     //stat struct
     struct stat last;
+
+    //time the process took.
+    struct tms time;
+    clock_t start;
 
     //parent pid
     pid_t pid;

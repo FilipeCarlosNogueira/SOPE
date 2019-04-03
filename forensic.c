@@ -8,6 +8,7 @@
 #include <time.h> 
 #include <dirent.h>
 #include <fcntl.h>
+#include <sys/times.h>
 
 #include "variables.h"
 #include "file.h"
@@ -17,6 +18,7 @@ struct forensic fs;
 
 void parsingArg(int argc, char const *argv[]){
     char *token;
+    char h_aux[100];
     char *delim = ",";
 
     //char error_message[] = "Usage: forensic [-r] [-h [md5[,sha1[,sha256]]] [-o <outfile>] [-v] <file|dir>\n";
@@ -69,6 +71,20 @@ void parsingArg(int argc, char const *argv[]){
         perror("file|directory stat");
         exit(EXIT_FAILURE);
     }
+
+    //if user specified the execution register
+    if(fs.execution_register != -1){
+        fs.start = times(&fs.time);
+
+        strcpy(h_aux, "COMAND forensic ");
+        if(fs.r_flag)
+            strcat(h_aux, "-r ");
+        if(fs.md5)
+            strcat(h_aux, "md5 ");
+        
+    }
+
+
 }
 
 int main(int argc, char const *argv[])
