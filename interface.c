@@ -23,8 +23,7 @@ void sigint_handler(int sig)
       printf("\nCNTRL+C handler ativado %d\n",sig);
       regFlag=1;
     }
-    else
-      printf("Child died (sig:%d)\n",sig);
+    //  printf("Child died (sig:%d)\n",sig);
 }
 
 //parses all perminent information to the son struct
@@ -106,8 +105,8 @@ int directory_handler(struct forensic *parent, struct dirent *de){
 
             pid_t pid;
             //it creates a seperate process to compute it.
-            printf("Sleeping, regflag is:%d\n",regFlag);
-            sleep(2);
+            //printf("Sleeping, regflag is:%d\n",regFlag);
+            //sleep(2);
             if(regFlag==0){
 
               if(((pid = fork()) == 0)){
