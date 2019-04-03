@@ -32,14 +32,14 @@ void parsingArg(int argc, char const *argv[]){
 
         //output_file
         else if(strcmp(argv[i], "-o") == 0){
-            fs.output_file = open(argv[i+1], O_WRONLY|O_CREAT|O_APPEND|O_TRUNC, S_IWGRP);
+            fs.output_file = open(argv[i+1], O_RDWR|O_CREAT|O_APPEND|O_TRUNC, S_IWGRP);
             printf("Data saved on file %s\n", argv[i+1]);
             i++;
         }
 
         //execution register
         else if(strcmp(argv[i], "-v") == 0){
-            fs.execution_register = open(getenv("LOGFILENAME="), O_WRONLY|O_CREAT|O_APPEND|O_TRUNC, S_IWGRP);
+            fs.execution_register = open(getenv("LOGFILENAME="), O_RDWR|O_CREAT|O_APPEND|O_TRUNC, S_IWGRP);
             
             printf("Execution records saved on file %s\n", getenv("LOGFILENAME="));
         }
