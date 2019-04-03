@@ -13,7 +13,7 @@
 #include "file.h"
 
 /*
-* This file computes all the output information regarding a single file. 
+* This file computes all the output information regarding a single file.
 */
 
 struct forensic *current;
@@ -42,7 +42,7 @@ char *file_type(){
     //trim path string
     if(path[strlen(path)-1] == '\n')
         path[strlen(path)-1] = '\0';
-    
+
     //remove file name from path string
     strtok(path, " ");
     char *token = strtok(NULL, "\n");
@@ -78,7 +78,7 @@ char *algorithm(char *algm){
     //trim path string
     if(path[strlen(path)-1] == '\n')
         path[strlen(path)-1] = '\0';
-    
+
     //remove file name from path string
     //in linux the structer is: (hash code) <file_name>
     char *token = strtok(path, " ");
@@ -100,7 +100,7 @@ void print_data(struct forensic *new, char *subfolder){
     current = new;
 
     char buff[150];
- 
+
     //file_name
     strcat(result, current->name);
     strcat(result, ",");
@@ -116,17 +116,18 @@ void print_data(struct forensic *new, char *subfolder){
 
     //file_access
     if(access(current->name, R_OK) == 0){ //read access
-        strcat(result, "r"); 
+        strcat(result, "r");
     }
     if(access(current->name, W_OK) == 0){ //write access
-        strcat(result, "w"); 
+        strcat(result, "w");
     }
     strcat(result, ",");
 
     //file_created_date
-    strftime(buff, 50, "%FT%T", localtime(&current->last.st_birthtime));
-    strcat(result, buff);
-    strcat(result, ",");
+    //doesn't work on linux 
+    //strftime(buff, 50, "%FT%T", localtime(&current->last.st_birthtime));
+    //strcat(result, buff);
+    //strcat(result, ",");
 
     //file_modification_date
     strftime(buff, 50, "%FT%T", localtime(&current->last.st_mtime));
@@ -155,7 +156,7 @@ void print_data(struct forensic *new, char *subfolder){
 
     //writes on the execution register file if one was provided
     char exec_reg[100];
-    
+
     if(current->execution_register != -1){
         //-inst
         sprintf(buff, "%.2f", ((double) (times(&current->time) - current->start)/sysconf(_SC_CLK_TCK)) * 1000.0);

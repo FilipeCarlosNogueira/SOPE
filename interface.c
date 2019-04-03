@@ -16,12 +16,16 @@
 
 
 int regFlag=0;
-
-// void sigint_handler(int sig)
-// {
-//     if(sig==2)
-//         regFlag=1;
-// }
+void sigint_handler(int sig)
+{
+   if(sig==2)
+    {
+      printf("\nCNTRL+C handler ativado %d\n",sig);
+      regFlag=1;
+    }
+    else
+      printf("Child died (sig:%d)\n",sig);
+}
 
 //parses all perminent information to the son struct
 void parse_parent_son(struct forensic *son, struct forensic *parent){
@@ -95,18 +99,23 @@ int directory_handler(struct forensic *parent, struct dirent *de){
             //     strcpy(h_aux, "COMAND forensic -r ");
             //     strcat(h_aux, "./");
             //     strcat(h_aux, son.name);
-            //     strcat(h_aux, "\n");  
+            //     strcat(h_aux, "\n");
 
             //     write(son.execution_register, h_aux, strlen(h_aux)*sizeof(char));
             // }
 
             pid_t pid;
             //it creates a seperate process to compute it.
-            if((pid = fork()) == 0){
-                //sleep(5);
-                recurs(&son);
-                exit(0);
-            }
+            printf("Sleeping, regflag is:%d\n",regFlag);
+            sleep(2);
+            if(regFlag==0){
+
+              if(((pid = fork()) == 0)){
+                  //sleep(5);
+                  recurs(&son);
+                  exit(0);
+                }
+              }
             pid = wait(&status);
         }
         //if the user doen't want recursive then it shows nothing
@@ -124,6 +133,17 @@ int directory_handler(struct forensic *parent, struct dirent *de){
 }
 
 void recurs(struct forensic *parent){
+
+    //criar handler para sigint
+    struct sigaction action;
+
+    action.sa_handler=sigint_handler;
+    sigemptyset(&action.sa_mask);
+    action.sa_flags=SA_RESTART;
+
+    //CTR-C
+    sigaction(SIGINT,&action,NULL);
+    sigaction(SIGCHLD,&action,NULL);
     //if dir
     if((parent->last.st_mode & S_IFMT) == S_IFDIR){
 
