@@ -8,10 +8,20 @@
 #include <time.h>
 #include <dirent.h>
 #include <sys/wait.h>
+#include <signal.h>
 
 #include "variables.h"
 #include "file.h"
 #include "interface.h"
+
+
+int regFlag=0;
+
+// void sigint_handler(int sig)
+// {
+//     if(sig==2)
+//         regFlag=1;
+// }
 
 //parses all perminent information to the son struct
 void parse_parent_son(struct forensic *son, struct forensic *parent){
@@ -43,6 +53,16 @@ void parse_parent_son(struct forensic *son, struct forensic *parent){
 }
 
 int directory_handler(struct forensic *parent, struct dirent *de){
+    // //criar handler para sigint
+    // struct sigaction action;
+
+    // action.sa_handler=sigint_handler;
+    // sigemptyset(&action.sa_mask);
+    // action.sa_flags=SA_RESTART;
+
+    // //CTR-C
+    // sigaction(SIGINT,&action,NULL);
+
     int status;
     //char h_aux[100];
 
@@ -64,6 +84,10 @@ int directory_handler(struct forensic *parent, struct dirent *de){
     //if the element in consideration is an directory
     if((son.last.st_mode & S_IFMT) == S_IFDIR){
 
+        // if(regFlag == 1){
+        //     return 1;
+        // }
+
         //the user wants recursive
         if(parent->r_flag){
             // //if user specified the execution register
@@ -79,7 +103,7 @@ int directory_handler(struct forensic *parent, struct dirent *de){
             pid_t pid;
             //it creates a seperate process to compute it.
             if((pid = fork()) == 0){
-                sleep(5);
+                //sleep(5);
                 recurs(&son);
                 exit(0);
             }
@@ -117,7 +141,6 @@ void recurs(struct forensic *parent){
         struct dirent *de;
         //opens all files in the current directory
         while((de = readdir(dr)) != NULL){
-
             //if the element in the parent directory starts with '.' or ".." it ignores
             if(directory_handler(parent, de))
                 continue;

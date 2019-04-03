@@ -20,19 +20,19 @@ struct forensic fs;
 int n_directories;
 int n_files;
 
-void sigint_handler(int sig)
-{
-    int status;
-    printf("-- %d\n", sig);
-    //CTR-C
-    if(sig == 2){
-        wait(&status);
-        exit(1);
-    }
-    // else{
-    //     printf();
-    // }
-}
+// void sigint_handler(int sig)
+// {
+//     int status;
+//     printf("-- %d\n", sig);
+//     //CTR-C
+//     if(sig == 2){
+//         wait(&status);
+//         exit(1);
+//     }
+//     // else{
+//     //     printf();
+//     // }
+// }
 
 
 void parsingArg(int argc, char const *argv[]){
@@ -110,16 +110,16 @@ void parsingArg(int argc, char const *argv[]){
 
 int main(int argc, char const *argv[])
 {
-    //criar handler para sigint
-    struct sigaction action;
+    // //criar handler para sigint
+    // struct sigaction action;
 
-    action.sa_handler=sigint_handler;
-    sigemptyset(&action.sa_mask);
-    action.sa_flags=SA_RESTART;
+    // action.sa_handler=sigint_handler;
+    // sigemptyset(&action.sa_mask);
+    // action.sa_flags=SA_RESTART;
 
-    //CTR-C
-    sigaction(SIGINT,&action,NULL);
-    sigaction(SIGCHLD,&action,NULL);
+    // //CTR-C
+    // sigaction(SIGINT,&action,NULL);
+    // sigaction(SIGCHLD,&action,NULL);
 
     init(&fs);
 
