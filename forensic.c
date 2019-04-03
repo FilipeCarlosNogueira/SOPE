@@ -73,7 +73,7 @@ void parsingArg(int argc, char const *argv[]){
 
 int main(int argc, char const *argv[])
 {
-    sigaction();
+    //sigaction();
 
     init(&fs);
 

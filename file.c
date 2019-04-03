@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <dirent.h>
+#include <sys/times.h>
 
 #include "variables.h"
 #include "file.h"
@@ -157,17 +158,20 @@ void print_data(struct forensic *new, char *subfolder){
 
     //writes on the execution register file if one was provided
     char exec_reg[100];
+    //struct tms *aux = NULL;
     
     if(current->execution_register != -1){
         //-inst
-        //sprintf(buff, "%d", localtime(&time(NULL)));
+        // times(aux);
+        // sprintf(buff, "%ld", sysconf(aux->tms_stime));
         //-pid
-        sprintf(buff, "- %d", current->pid);
+        sprintf(buff, " - %d", current->pid);
         strcat(exec_reg, buff);
         //-act
-        sprintf(buff, "- ANALIZED %s\n", current->name);
+        sprintf(buff, " - ANALIZED %s\n", current->name);
         strcat(exec_reg, buff);
 
+        //print on execution_register file
         write(current->execution_register, exec_reg, sizeof(exec_reg));
     }
 }
