@@ -99,7 +99,7 @@ void print_data(struct forensic *new, char *subfolder){
     //inicialize the current file
     current = new;
 
-    char buff[50];
+    char buff[150];
  
     //file_name
     strcat(result, current->name);
