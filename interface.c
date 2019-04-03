@@ -5,8 +5,9 @@
 #include <stdbool.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <time.h> 
+#include <time.h>
 #include <dirent.h>
+#include <wait.h>
 
 #include "variables.h"
 #include "file.h"
@@ -33,11 +34,12 @@ void parse_parent_son(struct forensic *son, struct forensic *parent){
         exit(1);
     }
 
-    //saving the first parent pid 
+    //saving the first parent pid
     son->pid = parent->pid;
 }
 
 int directory_handler(struct forensic *parent, struct dirent *de){
+    int status;
 
     //if the element in the parent directory starts with '.' or ".." it ignores
     if(de->d_name[0] == '.'){
@@ -47,7 +49,7 @@ int directory_handler(struct forensic *parent, struct dirent *de){
     //inicializes son's variables.
     struct forensic son;
     init(&son);
-    
+
     //saves name
     sprintf(son.name, "%s", de->d_name);
 
@@ -56,7 +58,7 @@ int directory_handler(struct forensic *parent, struct dirent *de){
 
     //if the element in consideration is an directory
     if((son.last.st_mode & S_IFMT) == S_IFDIR){
-        
+
         //the user wants recursive
         if(parent->r_flag){
             pid_t pid;
@@ -65,6 +67,7 @@ int directory_handler(struct forensic *parent, struct dirent *de){
                 recurs(&son);
                 exit(0);
             }
+            pid = wait(&status);
         }
         //if the user doen't want recursive then it shows nothing
     }
@@ -83,7 +86,7 @@ int directory_handler(struct forensic *parent, struct dirent *de){
 void recurs(struct forensic *parent){
     //if dir
     if((parent->last.st_mode & S_IFMT) == S_IFDIR){
-        
+
         //opens parent directory
         DIR *dr = opendir(parent->name);
         if(dr == NULL){
@@ -94,7 +97,7 @@ void recurs(struct forensic *parent){
 
         //changes to parent directory
         chdir(parent->name);
-        
+
         struct dirent *de;
         //opens all files in the current directory
         while((de = readdir(dr)) != NULL){
