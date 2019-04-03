@@ -5,16 +5,24 @@
 #include <stdbool.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <time.h> 
+#include <time.h>
 #include <dirent.h>
 #include <fcntl.h>
 #include <sys/times.h>
+#include <signal.h>
 
 #include "variables.h"
 #include "file.h"
 #include "interface.h"
 
 struct forensic fs;
+
+void sigint_handler(int sig)
+{
+  printf("\nHandler4Cntr+C %d\n",sig);
+  _exit(1);
+}
+
 
 void parsingArg(int argc, char const *argv[]){
     char *token;
@@ -40,14 +48,14 @@ void parsingArg(int argc, char const *argv[]){
         //execution register
         else if(strcmp(argv[i], "-v") == 0){
             fs.execution_register = open(getenv("LOGFILENAME="), O_WRONLY|O_CREAT|O_APPEND|O_TRUNC, S_IWGRP);
-            
+
             printf("Execution records saved on file %s\n", getenv("LOGFILENAME="));
         }
 
         //digital prints
         else if (strcmp(argv[i], "-h") == 0) {
             token = strtok((char *)argv[i+1], delim);
-            
+
                 while(token != NULL) {
 
                 if(strcmp(token, "md5") == 0) fs.md5 = true;
@@ -84,7 +92,7 @@ void parsingArg(int argc, char const *argv[]){
 
         strcat(h_aux, "./");
         strcat(h_aux, argv[argc-1]);
-        strcat(h_aux, "\n");  
+        strcat(h_aux, "\n");
 
         write(fs.execution_register, h_aux, strlen(h_aux)*sizeof(char));
     }
@@ -92,7 +100,15 @@ void parsingArg(int argc, char const *argv[]){
 
 int main(int argc, char const *argv[])
 {
-    //sigaction();
+    //criar handler para sigint
+    struct sigaction action;
+
+    action.sa_handler=sigint_handler;
+    sigemptyset(&action.sa_mask);
+    action.sa_flags=SA_RESTART;
+
+    sigaction(SIGINT,&action,NULL);
+    //  sleep(1);
 
     init(&fs);
 
