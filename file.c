@@ -100,7 +100,6 @@ void print_data(struct forensic *new, char *subfolder){
     current = new;
 
     char buff[50];
-    time_t now;
  
     //file_name
     strcat(result, current->name);
@@ -125,13 +124,11 @@ void print_data(struct forensic *new, char *subfolder){
     strcat(result, ",");
 
     //file_created_date
-    now = time(&current->last.st_birthtime);
     strftime(buff, 50, "%FT%T", localtime(&current->last.st_birthtime));
     strcat(result, buff);
     strcat(result, ",");
 
     //file_modification_date
-    now = time(&current->last.st_mtime);
     strftime(buff, 50, "%FT%T", localtime(&current->last.st_mtime));
     strcat(result, buff);
 

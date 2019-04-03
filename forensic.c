@@ -76,14 +76,18 @@ void parsingArg(int argc, char const *argv[]){
         fs.start = times(&fs.time);
 
         strcpy(h_aux, "COMAND forensic ");
-        if(fs.r_flag)
-            strcat(h_aux, "-r ");
-        if(fs.md5)
-            strcat(h_aux, "md5 ");
-        
+
+        for(int i = 1; i < argc-1; i++){
+            strcat(h_aux, argv[i]);
+            strcat(h_aux, " ");
+        }
+
+        strcat(h_aux, "./");
+        strcat(h_aux, argv[argc-1]);
+        strcat(h_aux, "\n");  
+
+        write(fs.execution_register, h_aux, strlen(h_aux)*sizeof(char));
     }
-
-
 }
 
 int main(int argc, char const *argv[])

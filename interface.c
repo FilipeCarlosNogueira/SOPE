@@ -44,6 +44,7 @@ void parse_parent_son(struct forensic *son, struct forensic *parent){
 
 int directory_handler(struct forensic *parent, struct dirent *de){
     int status;
+    //char h_aux[100];
 
     //if the element in the parent directory starts with '.' or ".." it ignores
     if(de->d_name[0] == '.'){
@@ -65,6 +66,16 @@ int directory_handler(struct forensic *parent, struct dirent *de){
 
         //the user wants recursive
         if(parent->r_flag){
+            // //if user specified the execution register
+            // if(son.execution_register != -1){
+            //     strcpy(h_aux, "COMAND forensic -r ");
+            //     strcat(h_aux, "./");
+            //     strcat(h_aux, son.name);
+            //     strcat(h_aux, "\n");  
+
+            //     write(son.execution_register, h_aux, strlen(h_aux)*sizeof(char));
+            // }
+
             pid_t pid;
             //it creates a seperate process to compute it.
             if((pid = fork()) == 0){
