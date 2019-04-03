@@ -27,7 +27,6 @@ void parsingArg(int argc, char const *argv[]){
 
         //directory
         if(strcmp(argv[i], "-r") == 0){
-            i++;
             fs.r_flag = true;
         }
 
