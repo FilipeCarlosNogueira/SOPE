@@ -79,6 +79,7 @@ int directory_handler(struct forensic *parent, struct dirent *de){
             pid_t pid;
             //it creates a seperate process to compute it.
             if((pid = fork()) == 0){
+                sleep(5);
                 recurs(&son);
                 exit(0);
             }

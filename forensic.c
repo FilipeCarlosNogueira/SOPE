@@ -10,17 +10,28 @@
 #include <fcntl.h>
 #include <sys/times.h>
 #include <signal.h>
+#include <sys/wait.h>
 
 #include "variables.h"
 #include "file.h"
 #include "interface.h"
 
 struct forensic fs;
+int n_directories;
+int n_files;
 
 void sigint_handler(int sig)
 {
-  printf("\nHandler4Cntr+C %d\n",sig);
-  _exit(1);
+    int status;
+    printf("-- %d\n", sig);
+    //CTR-C
+    if(sig == 2){
+        wait(&status);
+        exit(1);
+    }
+    // else{
+    //     printf();
+    // }
 }
 
 
@@ -47,8 +58,8 @@ void parsingArg(int argc, char const *argv[]){
 
         //execution register
         else if(strcmp(argv[i], "-v") == 0){
-            fs.execution_register = open(getenv("LOGFILENAME="), O_RDWR|O_CREAT|O_APPEND|O_TRUNC, S_IWGRP);
-            printf("Execution records saved on file %s\n", getenv("LOGFILENAME="));
+            fs.execution_register = open(getenv("LOGFILENAME"), O_RDWR|O_CREAT|O_APPEND|O_TRUNC, S_IWGRP);
+            printf("Execution records saved on file %s\n", getenv("LOGFILENAME"));
         }
 
         //digital prints
@@ -106,8 +117,9 @@ int main(int argc, char const *argv[])
     sigemptyset(&action.sa_mask);
     action.sa_flags=SA_RESTART;
 
+    //CTR-C
     sigaction(SIGINT,&action,NULL);
-    //  sleep(1);
+    sigaction(SIGCHLD,&action,NULL);
 
     init(&fs);
 

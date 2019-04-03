@@ -41,5 +41,7 @@ struct forensic
 };
 
 void init(struct forensic *aux);
+extern int n_directories;
+extern int n_files;
 
 #endif
