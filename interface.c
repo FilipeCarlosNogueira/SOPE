@@ -63,7 +63,8 @@ int directory_handler(struct forensic *parent, struct dirent *de){
 
         //if the element in consideration is an directory
         if((son.last.st_mode & S_IFMT) == S_IFDIR) {
-                raise(SIGUSR1);
+                if(son.output_file != 1)
+                        raise(SIGUSR1);
                 //the user wants recursive
                 if(parent->r_flag) {
                         // //if user specified the execution register
@@ -88,7 +89,8 @@ int directory_handler(struct forensic *parent, struct dirent *de){
         }
         //if its a file, it print automatically
         else if(((son.last.st_mode & S_IFMT) == S_IFREG)) {
-                raise(SIGUSR2);
+                if(son.output_file != 1)
+                        raise(SIGUSR2);
                 //if its a subfolder it passes the subfolder name
                 if(son.pid != getppid())
                         print_data(&son, NULL);
@@ -102,6 +104,8 @@ int directory_handler(struct forensic *parent, struct dirent *de){
 void recurs(struct forensic *parent){
         //if dir
         if((parent->last.st_mode & S_IFMT) == S_IFDIR) {
+                if(parent->output_file != 1)
+                        raise(SIGUSR1);
                 //opens parent directory
                 DIR *dr = opendir(parent->name);
                 if(dr == NULL) {
@@ -127,6 +131,8 @@ void recurs(struct forensic *parent){
         }
         //if file
         else{
+                if(parent->output_file != 1)
+                        raise(SIGUSR2);
                 print_data(parent, NULL);
         }
 }

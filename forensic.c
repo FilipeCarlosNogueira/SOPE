@@ -16,6 +16,8 @@
 #include "interface.h"
 
 struct forensic fs;
+int nfile;
+int ndir;
 
 void sig_handler(int sig)
 {
@@ -23,10 +25,14 @@ void sig_handler(int sig)
                 printf("\nExiting Process, Ctrl+C. \n");
                 _exit(1);
         }
-        if(sig == SIGUSR1)
-                printf("\nNew Dir\n");
+        if(sig == SIGUSR1) {
+                ndir++;
+                printf("New directory: %d/%d directories/files at this time\n", ndir, nfile);
+        }
         if(sig == SIGUSR2)
-                printf("\nNew File\n");
+        {
+                nfile++;
+        }
 }
 
 void parsingArg(int argc, char const *argv[]){
@@ -137,6 +143,8 @@ int main(int argc, char const *argv[])
 
         //Extrair a informação solicitada de apenas um ficheiro e imprimi-la na saída padrão de acordo com os argumentos passados.
         recurs(&fs);
+
+        printf("New directory: %d/%d directories/files at this time\n", ndir, nfile);
 
         return 0;
 }
