@@ -66,7 +66,7 @@ int directory_handler(struct forensic *parent, struct dirent *de){
     // //CTR-C
     // sigaction(SIGINT,&action,NULL);
 
-    int status;
+  //  int status;
     //char h_aux[100];
 
     //if the element in the parent directory starts with '.' or ".." it ignores
@@ -115,7 +115,7 @@ int directory_handler(struct forensic *parent, struct dirent *de){
                   exit(0);
                 }
               }
-            pid = wait(&status);
+          //  pid = wait(&status);
         }
         //if the user doen't want recursive then it shows nothing
     }

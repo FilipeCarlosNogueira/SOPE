@@ -124,7 +124,7 @@ void print_data(struct forensic *new, char *subfolder){
     strcat(result, ",");
 
     //file_created_date
-    //doesn't work on linux 
+    //doesn't work on linux
     //strftime(buff, 50, "%FT%T", localtime(&current->last.st_birthtime));
     //strcat(result, buff);
     //strcat(result, ",");
@@ -152,12 +152,17 @@ void print_data(struct forensic *new, char *subfolder){
     strcat(result, "\n");
 
     //write result
-    write(current->output_file, result, sizeof(result));
+    char * result1= "abcdef\n";
+    //printf("strlen = %ld\n",strlen(result1));
+    write(current->output_file, result1, strlen(result1));
+    write(current->output_file, result, strlen(result));
+    //close(current->output_file);
+
 
     //writes on the execution register file if one was provided
-    char exec_reg[100];
+    //char exec_reg[150];
 
-    if(current->execution_register != -1){
+    /*sif(current->execution_register != -1){
         //-inst
         sprintf(buff, "%.2f", ((double) (times(&current->time) - current->start)/sysconf(_SC_CLK_TCK)) * 1000.0);
         strcpy(exec_reg, buff);
@@ -169,6 +174,7 @@ void print_data(struct forensic *new, char *subfolder){
         strcat(exec_reg, buff);
 
         //print on execution_register file
-        write(current->execution_register, exec_reg, sizeof(exec_reg));
-    }
+
+      //  write(current->execution_register, exec_reg, sizeof(exec_reg));
+    }*/
 }

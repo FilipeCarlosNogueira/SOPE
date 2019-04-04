@@ -51,7 +51,7 @@ void parsingArg(int argc, char const *argv[]){
 
         //output_file
         else if(strcmp(argv[i], "-o") == 0){
-            fs.output_file = open(argv[i+1], O_RDWR|O_CREAT|O_APPEND|O_TRUNC, S_IWGRP);
+            fs.output_file = open(argv[i+1], O_WRONLY|O_CREAT|O_APPEND|O_TRUNC,0600);
             printf("Data saved on file %s\n", argv[i+1]);
             i++;
         }
