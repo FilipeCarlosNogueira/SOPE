@@ -18,6 +18,7 @@
 struct forensic fs;
 int nfile;
 int ndir;
+char out[20];
 
 void sig_handler(int sig)
 {
@@ -49,17 +50,16 @@ void parsingArg(int argc, char const *argv[]){
                         fs.r_flag = true;
                 }
 
-        //output_file
-        else if(strcmp(argv[i], "-o") == 0){
-            fs.output_file = open(argv[i+1], O_WRONLY|O_CREAT|O_APPEND|O_TRUNC,0600);
-            printf("Data saved on file %s\n", argv[i+1]);
-            i++;
-        }
+                //output_file
+                else if(strcmp(argv[i], "-o") == 0) {
+                        fs.output_file = open(argv[i+1], O_WRONLY|O_CREAT|O_APPEND|O_TRUNC,0600);
+                        strcpy(out,argv[i+1]);
+                        i++;
+                }
 
                 //execution register
                 else if(strcmp(argv[i], "-v") == 0) {
-                        fs.execution_register = open(getenv("LOGFILENAME"), O_RDWR|O_CREAT|O_APPEND|O_TRUNC, S_IWGRP);
-                        printf("Execution records saved on file %s\n", getenv("LOGFILENAME"));
+                        fs.execution_register = open(getenv("LOGFILENAME"), O_RDWR|O_CREAT|O_APPEND|O_TRUNC,0600);
                 }
 
                 //digital prints
@@ -111,18 +111,18 @@ void parsingArg(int argc, char const *argv[]){
 int main(int argc, char const *argv[])
 {
         //criar handler para sigint
-        struct sigaction action;
+        struct sigaction stop;
 
-        action.sa_handler=sig_handler;
-        sigemptyset(&action.sa_mask);
-        action.sa_flags=SA_RESTART;
+        stop.sa_handler=sig_handler;
+        sigemptyset(&stop.sa_mask);
+        stop.sa_flags=SA_RESTART;
 
-        sigaction(SIGINT,&action,NULL);
+        sigaction(SIGINT,&stop,NULL);
 
         struct sigaction dir;
 
         dir.sa_handler=sig_handler;
-        sigemptyset(&action.sa_mask);
+        sigemptyset(&dir.sa_mask);
         dir.sa_flags=SA_RESTART;
 
         sigaction(SIGUSR1,&dir,NULL);
@@ -144,7 +144,12 @@ int main(int argc, char const *argv[])
         //Extrair a informação solicitada de apenas um ficheiro e imprimi-la na saída padrão de acordo com os argumentos passados.
         recurs(&fs);
 
-        printf("New directory: %d/%d directories/files at this time\n", ndir, nfile);
+        if(fs.output_file != -1) {
+                printf("New directory: %d/%d directories/files at this time\n", ndir, nfile);
+                printf("Data saved on file %s\n", out);
+        }
+        if(fs.execution_register != -1)
+                printf("Execution records saved on file %s\n", getenv("LOGFILENAME"));
 
         return 0;
 }

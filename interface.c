@@ -44,7 +44,7 @@ void parse_parent_son(struct forensic *son, struct forensic *parent){
 
 int directory_handler(struct forensic *parent, struct dirent *de){
         int status;
-        //char h_aux[100];
+        char aux[20];
 
         //if the element in the parent directory starts with '.' or ".." it ignores
         if(de->d_name[0] == '.') {
@@ -63,8 +63,6 @@ int directory_handler(struct forensic *parent, struct dirent *de){
 
         //if the element in consideration is an directory
         if((son.last.st_mode & S_IFMT) == S_IFDIR) {
-                if(son.output_file != 1)
-                        raise(SIGUSR1);
                 //the user wants recursive
                 if(parent->r_flag) {
                         // //if user specified the execution register
@@ -89,8 +87,13 @@ int directory_handler(struct forensic *parent, struct dirent *de){
         }
         //if its a file, it print automatically
         else if(((son.last.st_mode & S_IFMT) == S_IFREG)) {
-                if(son.output_file != 1)
+                if(son.output_file != 1) {
                         raise(SIGUSR2);
+                        if(son.execution_register != -1) {
+                                strcpy(aux, "SIGUSR2\n");
+                                write(son.execution_register, aux, strlen(aux));
+                        }
+                }
                 //if its a subfolder it passes the subfolder name
                 if(son.pid != getppid())
                         print_data(&son, NULL);
@@ -103,9 +106,15 @@ int directory_handler(struct forensic *parent, struct dirent *de){
 
 void recurs(struct forensic *parent){
         //if dir
+        char aux[20];
         if((parent->last.st_mode & S_IFMT) == S_IFDIR) {
-                if(parent->output_file != 1)
+                if(parent->output_file != 1) {
                         raise(SIGUSR1);
+                        if(parent->execution_register != -1) {
+                                strcpy(aux, "SIGUSR1\n");
+                                write(parent->execution_register, aux, strlen(aux));
+                        }
+                }
                 //opens parent directory
                 DIR *dr = opendir(parent->name);
                 if(dr == NULL) {
@@ -131,8 +140,13 @@ void recurs(struct forensic *parent){
         }
         //if file
         else{
-                if(parent->output_file != 1)
+                if(parent->output_file != 1) {
                         raise(SIGUSR2);
+                        if(parent->execution_register != -1) {
+                                strcpy(aux, "SIGUSR2\n");
+                                write(parent->execution_register, aux, strlen(aux));
+                        }
+                }
                 print_data(parent, NULL);
         }
 }
