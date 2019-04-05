@@ -132,7 +132,6 @@ int main(int argc, char const *argv[])
         recurs(&fs);
 
         if(fs.output_file != -1) {
-                printf("New directory: %d/%d directories/files at this time\n", ndir, nfile);
                 printf("Data saved on file %s\n", out);
         }
         if(fs.execution_register != -1)
