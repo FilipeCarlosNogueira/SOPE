@@ -165,7 +165,7 @@ void print_data(struct forensic *new, char *subfolder){
                 sprintf(buff, "%.2f", ((double) (times(&current->time) - current->start)/sysconf(_SC_CLK_TCK)) * 1000.0);
                 strcpy(exec_reg, buff);
                 //-pid
-                sprintf(buff, " - %d", current->pid);
+                sprintf(buff, " - %d", getpid());
                 strcat(exec_reg, buff);
                 //-act
                 sprintf(buff, " - ANALIZED %s\n", current->name);
