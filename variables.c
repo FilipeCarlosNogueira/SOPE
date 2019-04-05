@@ -1,11 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <stdbool.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-
 #include "variables.h"
 
 void init(struct forensic *aux){
@@ -26,4 +18,8 @@ void init(struct forensic *aux){
 
     //recursive flag
     aux->r_flag = false;
+
+    //number of files
+    aux->ndir = 0;
+    aux->nfile = 0;
 }
