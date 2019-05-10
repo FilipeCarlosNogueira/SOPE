@@ -5,11 +5,9 @@
 
 int main(int argc, char const *argv[]){
         char *id, *password, *delay, *operation;
-
-        int newid, saldo;
+        int newid, saldo, iddest, montante;
         char newpassword[MAX_PASSWORD_LEN];
 
-        int idDest, montante;
 
         if(argc != 5 && argc != 6) {
                 printf("Invalid Arguments Number\n");
@@ -54,10 +52,32 @@ int main(int argc, char const *argv[]){
                         newid = atoi(strtok((char *) argv[5], " "));
                         saldo = atoi(strtok(NULL, " "));
                         strcpy(newpassword, strtok(NULL, " "));
+
+                        if(newid > MAX_BANK_ACCOUNTS)
+                                printf("Invalid newID Number\n");
+                        else
+                                printf("%d ", newid);
+
+                        if(saldo > MAX_BALANCE || saldo < MIN_BALANCE)
+                                printf("Invalid Saldo Number\n");
+                        else
+                                printf("%d ", saldo);
+
+                        if(strlen(newpassword) < MIN_PASSWORD_LEN)
+                                printf("Invalid newPassword\n");
+                        else
+                                printf("%s\n", newpassword);
                 }
-                else if (atoi(operation) == 2){
-                        idDest = atoi(strtok((char *) argv[5], " "));
+                else {
+                        iddest = atoi(strtok((char *) argv[5], " "));
                         montante = atoi(strtok(NULL, " "));
+
+                        if(iddest > MAX_BANK_ACCOUNTS)
+                                printf("Invalid newID Number\n");
+                        else
+                                printf("%d ", iddest);
+
+                        printf("%d ", montante);
                 }
         }
         return 0;
