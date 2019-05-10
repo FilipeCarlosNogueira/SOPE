@@ -1,9 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "constants.h"
 #include "sope.h"
-#include "types.h"
 
 
 int main(int argc, char const *argv[]){
@@ -13,7 +11,7 @@ int main(int argc, char const *argv[]){
                 printf("Invalid Arguments Number\n");
                 return 0;
         }
-        
+
         tnum = malloc(sizeof(argv[1])+1);
         strcpy(tnum, argv[1]);
         if(atoi(tnum) > MAX_BANK_OFFICES)

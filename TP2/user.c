@@ -1,13 +1,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "constants.h"
 #include "sope.h"
-#include "types.h"
-
 
 int main(int argc, char const *argv[]){
-        char *id, *password, *delay, *operation, *arguments = "";
+        char *id, *password, *delay, *operation;
+        int newid, saldo;
+        char newpassword[MAX_PASSWORD_LEN];
+
 
         if(argc != 5 && argc != 6) {
                 printf("Invalid Arguments Number\n");
@@ -37,15 +37,30 @@ int main(int argc, char const *argv[]){
 
         operation = malloc(sizeof(argv[4])+1);
         strcpy(operation, argv[4]);
-        if(atoi(operation) != 0 || atoi(operation) != 1 || atoi(operation) != 2 || atoi(operation) != 3)
-                printf("Invalid Operation Number\n");
-        else
+        if(atoi(operation) == 0 || atoi(operation) == 1 || atoi(operation) == 2 || atoi(operation) == 3)
                 printf("%s ",operation);
+        else
+                printf("Invalid Operation Number\n");
 
         if(atoi(operation) == 0 || atoi(operation) == 2) {
-                arguments = malloc(sizeof(argv[5])+1);
-                strcpy(arguments, argv[5]);
-                printf("%s\n", arguments);
+                if(argc != 6) {
+                        printf("Invalid Arguments Number\n");
+                        return 0;
+                }
+
+                if(atoi(operation) == 0) {
+                        strtok((char *) argv[5], "\"");
+
+                        newid = atoi(strtok(NULL, " "));
+                        saldo = atoi(strtok(NULL, " "));
+                        strcpy(newpassword, strtok(NULL, "\""));
+
+                        printf("%d ", newid);
+                        printf("%d ", saldo);
+                        printf("%s\n", newpassword);
+                }
+                else {
+                }
         }
         return 0;
 }
