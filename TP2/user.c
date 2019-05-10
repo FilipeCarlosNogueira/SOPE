@@ -5,9 +5,11 @@
 
 int main(int argc, char const *argv[]){
         char *id, *password, *delay, *operation;
+
         int newid, saldo;
         char newpassword[MAX_PASSWORD_LEN];
 
+        int idDest, montante;
 
         if(argc != 5 && argc != 6) {
                 printf("Invalid Arguments Number\n");
@@ -49,17 +51,13 @@ int main(int argc, char const *argv[]){
                 }
 
                 if(atoi(operation) == 0) {
-                        strtok((char *) argv[5], "\"");
-
-                        newid = atoi(strtok(NULL, " "));
+                        newid = atoi(strtok((char *) argv[5], " "));
                         saldo = atoi(strtok(NULL, " "));
-                        strcpy(newpassword, strtok(NULL, "\""));
-
-                        printf("%d ", newid);
-                        printf("%d ", saldo);
-                        printf("%s\n", newpassword);
+                        strcpy(newpassword, strtok(NULL, " "));
                 }
-                else {
+                else if (atoi(operation) == 2){
+                        idDest = atoi(strtok((char *) argv[5], " "));
+                        montante = atoi(strtok(NULL, " "));
                 }
         }
         return 0;
