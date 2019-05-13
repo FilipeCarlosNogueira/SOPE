@@ -46,7 +46,7 @@ int readRequest(int srv_fifo_id, char *request) {
         do {
                 n = read (srv_fifo_id, request, 100);
 
-        }while (n>0 && *request++ != '\0');
+        }while (n<=0 && *request++ == '\0');
         
         return (n>0); 
 }
@@ -59,11 +59,8 @@ int main(int argc, char const *argv[]){
         if(!parsingCredentials(argc, argv))
                 return -1;
 
-        //Destroing the server FIFO
-        if(unlink(SERVER_FIFO_PATH) == -1){
-                perror("unlink /tmp/secure_srv failed!");
-                exit(1);
-        }
+        //DELETE BEFORE DELEVERY
+        unlink(SERVER_FIFO_PATH);
 
         //creating the server FIFO
         if( mkfifo(SERVER_FIFO_PATH, 0666) == -1){
@@ -77,7 +74,8 @@ int main(int argc, char const *argv[]){
                 exit(1);
         }
 
-        while(readRequest(srv_fifo_id,request)) printf("%s",request);
+        while(readRequest(srv_fifo_id,request)) 
+                printf("%s",request);
 
 
         //Destroing the server FIFO

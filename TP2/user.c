@@ -10,7 +10,7 @@
 
 tlv_request_t client;
 
-bool parsing(int argc, char const *argv[]){
+bool parsingCredentials(int argc, char const *argv[]){
         if(argc != 5 && (atoi(argv[4]) == 1 || atoi(argv[4]) == 3)) {
                 printf("Invalid Arguments Number\n");
                 return false;
@@ -30,7 +30,7 @@ bool parsing(int argc, char const *argv[]){
 
         
         //password
-        if(strlen(argv[2]) < MIN_PASSWORD_LEN || strlen(argv[2]) < MAX_PASSWORD_LEN){
+        if(strlen(argv[2]) < MIN_PASSWORD_LEN || strlen(argv[2]) > MAX_PASSWORD_LEN){
                 printf("Invalid Password\n");
                 return false;
         }
@@ -116,17 +116,19 @@ bool parsing(int argc, char const *argv[]){
         return true;
 }
 
-
 int main(int argc, char const *argv[]){
         
-        if(!parsing(argc, argv))
+        if(!parsingCredentials(argc, argv))
                 return -1;
         
-        char request_msg[100];
+        //char request_msg[100];
 
         int fd = open(SERVER_FIFO_PATH, O_WRONLY);
 
-        read(fd, request_msg, sizeof(char)*strlen(request_msg));
+        if(logRequest(fd, client.value.header.pid, &client) < 0){
+                perror("user logRequest() falied!");
+                exit(1);
+        }
        
         return 0;
 }
