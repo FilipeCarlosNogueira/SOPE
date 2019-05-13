@@ -5,19 +5,19 @@
 
 
 int main(int argc, char const *argv[]){
-        char *tnum, *password;
+        int tnum;
+        char *password;
 
         if(argc != 3) {
                 printf("Invalid Arguments Number\n");
                 return 0;
         }
 
-        tnum = malloc(sizeof(argv[1])+1);
-        strcpy(tnum, argv[1]);
-        if(atoi(tnum) > MAX_BANK_OFFICES)
+        tnum = atoi(argv[1]);
+        if(tnum > MAX_BANK_OFFICES)
                 printf("Invalid Thread Number\n");
         else
-                printf("%s ",tnum);
+                printf("%d ",tnum);
 
         password = malloc(sizeof(argv[2])+1);
         strcpy(password, argv[2]);

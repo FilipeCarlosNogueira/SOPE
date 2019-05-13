@@ -4,8 +4,8 @@
 #include "sope.h"
 
 int main(int argc, char const *argv[]){
-        char *id, *password, *delay, *operation;
-        int newid, saldo, iddest, montante;
+        char *password;
+        int id, delay, operation, newid, saldo, iddest, montante;
         char newpassword[MAX_PASSWORD_LEN];
 
 
@@ -14,12 +14,11 @@ int main(int argc, char const *argv[]){
                 return 0;
         }
 
-        id = malloc(sizeof(argv[1])+1);
-        strcpy(id, argv[1]);
-        if(atoi(id) > MAX_BANK_ACCOUNTS)
+        id = atoi(argv[1]);
+        if(id > MAX_BANK_ACCOUNTS)
                 printf("Invalid ID Number\n");
         else
-                printf("%s ",id);
+                printf("%d ",id);
 
         password = malloc(sizeof(argv[2])+1);
         strcpy(password, argv[2]);
@@ -28,27 +27,25 @@ int main(int argc, char const *argv[]){
         else
                 printf("%s ", password);
 
-        delay = malloc(sizeof(argv[3])+1);
-        strcpy(delay, argv[3]);
-        if(atoi(delay) > MAX_OP_DELAY_MS)
+        delay = atoi(argv[3]);
+        if(delay > MAX_OP_DELAY_MS)
                 printf("Invalid Delay Number\n");
         else
-                printf("%s ", delay);
+                printf("%d ", delay);
 
-        operation = malloc(sizeof(argv[4])+1);
-        strcpy(operation, argv[4]);
-        if(atoi(operation) == 0 || atoi(operation) == 1 || atoi(operation) == 2 || atoi(operation) == 3)
-                printf("%s ",operation);
+        operation = atoi(argv[4]);
+        if(operation == 0 || operation == 1 || operation == 2 || operation == 3)
+                printf("%d ",operation);
         else
                 printf("Invalid Operation Number\n");
 
-        if(atoi(operation) == 0 || atoi(operation) == 2) {
+        if(operation == 0 || operation == 2) {
                 if(argc != 6) {
                         printf("Invalid Arguments Number\n");
                         return 0;
                 }
 
-                if(atoi(operation) == 0) {
+                if(operation == 0) {
                         newid = atoi(strtok((char *) argv[5], " "));
                         saldo = atoi(strtok(NULL, " "));
                         strcpy(newpassword, strtok(NULL, " "));
