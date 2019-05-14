@@ -1,4 +1,4 @@
-CFLAGS	=	-D_HPUX_SOURCE	-D_REENTRANT	-Wall	-Wextra	-Werror
+CFLAGS	=	-D_HPUX_SOURCE	-D_REENTRANT	-pthread	-Wall	-Wextra	-Werror
 OBJECTS1	=	server.o	log.o
 OBJECTS2	=	user.o	log.o
 
