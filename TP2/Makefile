@@ -5,7 +5,7 @@ OBJECTS2	=	user.o	log.o
 all:	user	server
 
 server: $(OBJECTS1)
-	gcc $(OBJECTS1) -o server
+	gcc -pthread $(OBJECTS1) -o server
 
 user: $(OBJECTS2)
 	gcc $(OBJECTS2) -o user
