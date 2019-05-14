@@ -16,19 +16,33 @@ struct server
 
 struct server host;
 
-bool parsingCredentials(int argc, char const *argv[]){
+pthread_t * bank_office;
+bank_account_t bank_acount[MAX_BANK_ACCOUNTS];
+
+//parses the data provided by the arguments of the shell
+bool parsingArguments(int argc, char const *argv[]){
         if(argc != 3) {
                 printf("Invalid Arguments Number\n");
                 return false;
         }
 
+        /**
+         * creating the bank_office array 
+         * validating the number of threads to be created
+        **/
         host.tnum = atoi(argv[1]);
-        if(host.tnum > MAX_BANK_OFFICES)
+        if(host.tnum > MAX_BANK_OFFICES || host.tnum <= 0)
                 printf("Invalid Thread Number\n");
-        else
+        else{
+                bank_office = (pthread_t*) malloc(sizeof(pthread_t)*host.tnum);
+                if(bank_office == NULL){
+                        perror("bank office array failed!");
+                        exit(1);
+                }
+        }
                 printf("%d ",host.tnum);
 
-        
+        //saving the server password
         if(strlen(argv[2]) < MIN_PASSWORD_LEN || strlen(argv[2]) > MAX_PASSWORD_LEN)
                 printf("Invalid Password\n");
         else{
@@ -39,14 +53,36 @@ bool parsingCredentials(int argc, char const *argv[]){
         return true;
 }
 
+//parsing request data
+// void * parsingRequest(void * arg){
+//         return NULL;
+// }
+
+/**
+* validades the request
+* Send to the user the justificafion 
+* returns true if is valid and false if is not a valid request
+**/
+// bool checkRequest(char * request){
+
+// }
+
 //reading user request
-int readRequest(int srv_fifo_id, char *request) {
+int readRequest(int srv_fifo_id){
         int n;
+        char request[100];
         
         do {
                 n = read (srv_fifo_id, request, 100);
+                
+                //check if request fills all the requirements
+                // if(!checkRequest(request)){
+                //         continue;
+                // }
 
-        }while (n<=0 && *request++ == '\0');
+        }while (n<=0);
+
+        printf("%s\n", request);
         
         return (n>0); 
 }
@@ -54,10 +90,16 @@ int readRequest(int srv_fifo_id, char *request) {
 int main(int argc, char const *argv[]){
 
         int srv_fifo_id;
-        char request[100];
         
-        if(!parsingCredentials(argc, argv))
+        //parses the data provided by the arguments of the shell
+        if(!parsingArguments(argc, argv))
                 return -1;
+
+        //Creation of the Admin Acount
+        if(logAccountCreation(STDOUT_FILENO, 0, bank_acount) < 0){
+                perror("Creation of Admin Acount failed!");
+                exit(1);
+        }
 
         //DELETE BEFORE DELEVERY
         unlink(SERVER_FIFO_PATH);
@@ -74,9 +116,11 @@ int main(int argc, char const *argv[]){
                 exit(1);
         }
 
-        while(readRequest(srv_fifo_id,request)) 
-                printf("%s",request);
-
+        
+        while(readRequest(srv_fifo_id)){
+                //performs the operation especified..
+                continue;
+        }
 
         //Destroing the server FIFO
         if(unlink(SERVER_FIFO_PATH) == -1){
