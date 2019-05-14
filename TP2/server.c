@@ -10,6 +10,10 @@
 
 #define MAX_REQUESTS 10
 
+/**
+ * Main structs.
+**/
+
 struct requests
 {
         tlv_request_t requestArray[MAX_REQUESTS];
@@ -18,14 +22,18 @@ struct requests
         int itemCount;
 };
 
-struct requests queue;
-pthread_mutex_t queueMutex = PTHREAD_MUTEX_INITIALIZER;
-
 struct server
 {
         int tnum;
         char password[MAX_PASSWORD_LEN+1];   
 };
+
+/**
+ * Server data.
+**/
+
+struct requests queue;
+pthread_mutex_t queueMutex = PTHREAD_MUTEX_INITIALIZER;
 
 struct server host;
 
@@ -76,9 +84,11 @@ tlv_request_t removeData() {
 }
 /**
  * ----------------------------
-**/ 
+**/
 
-//parses the data provided by the arguments of the shell
+/**
+ * parses the data provided by the arguments of the shell.
+**/
 bool parsingArguments(int argc, char const *argv[]){
         if(argc != 3) {
                 printf("Invalid Arguments Number\n");
@@ -116,7 +126,10 @@ bool parsingArguments(int argc, char const *argv[]){
         return true;
 }
 
-//Creation of the Admin Acount
+/**
+ * Creation of the Admin Acount.
+ * logs its creation.
+**/
 void adminAcount(){
         bank_account[0].account_id = 0;
         strcpy(bank_account[0].hash, "123");
@@ -130,7 +143,9 @@ void adminAcount(){
         }
 }
 
-//Creating and opening in read only the server FIFO
+/**
+ * Creating and opening in read only the server FIFO.
+**/
 void serverFIFOopen(){
         //DELETE BEFORE DELEVERY
         unlink(SERVER_FIFO_PATH);
@@ -148,47 +163,124 @@ void serverFIFOopen(){
         }
 }
 
-//thread funtion to perfrom operation
-void * bankOffice(void * arg){
+/**
+ * Funtion that generates the hash operation.
+**/
+char *hash(int algm){
+        FILE *fp;
+        char path[1035];
+        char command[50];
+
+        sprintf(command, "sha256sum %d", algm);
+        
+        /* Open the command for reading. */
+        fp = popen(command, "r");
+        if (fp == NULL) {
+                perror("popen()");
+                exit(1);
+        }
+
+        /* Read the output a line at a time - output it. */
+        if(fgets(path, sizeof(path)-1, fp) == NULL) {
+                perror("");
+                exit (1);
+        }
+
+        //trim path string
+        if(path[strlen(path)-1] == '\n')
+                path[strlen(path)-1] = '\0';
+
+        //remove file name from path string
+        //in linux the structer is: (hash code) <file_name>
+        char *token = strtok(path, " ");
+
+        /* close */
+        pclose(fp);
+
+        return token;
+}
+
+/**
+ * Thread funtion.
+ * Extracts the lastest request and validates the operation.
+ * Only one thread at a time can access the requests queue.
+**/
+void * bankOffice(){
+
+        //--- auxiliar code ---
+        int arg;
+
+        for(int i = 0; i < host.tnum; i++){
+                if(bank_office[i] == pthread_self()){
+                        arg = i;
+                }
+        }
+        //---------------------
 
         tlv_request_t request;
 
-        pthread_mutex_lock(&queueMutex);
+        //loop only stops when the operation to shutdown the server is requested --> TO BE IMPLEMENTED.
+        while(1){
 
-        printf("thread: %d\n", *(int*)arg);
+                //locks mutex.
+                pthread_mutex_lock(&queueMutex);
 
-        while (1){
-                
-                if (!isEmpty()){
-                        request = removeData();
-                        write(STDOUT_FILENO, "\n[REQUEST]\n", 11);
-                        logRequest(STDOUT_FILENO, request.value.header.pid, &request);
-                        pthread_mutex_unlock(&queueMutex);
+                while (1){
+
+                        //when there's a request in the queue, the request is removed.
+                        if (!isEmpty()){
+
+                                //removing request from the queue.
+                                request = removeData();
+
+                                //--- auxiliar code ---
+                                write(STDOUT_FILENO, "\n[REQUEST]\n", 11);
+                                logRequest(STDOUT_FILENO, arg, &request);
+                                //---------------------
+                                break;
+                        }
                 }
+
+                //unlock mutex.
+                pthread_mutex_unlock(&queueMutex);
         }
 
         return NULL;
 }
 
-void openBankOffices(){
 
-        int pos[2];
+/**
+ * Creates all the threads specified in the shell arguments.
+ * After each creation, the funtion logs the oppening of the respective bank office.
+**/ 
+void openBankOffices(){
         
         for (int i = 0; i < host.tnum; i++){
-                pos[i] = i;
-                pthread_create(&bank_office[i], NULL, bankOffice, &pos[i]);
+                //creating bank office
+                pthread_create(&bank_office[i], NULL, bankOffice, NULL);
+
+                //log creation
                 logBankOfficeOpen(STDOUT_FILENO, i+1, bank_office[i]);
         } 
 }
 
+/**
+ * Closes all the threads specified in the shell arguments.
+ * After each close, the funtion logs the closure of the respective bank office.
+**/ 
 void closeBankOffices(){
         for (int i = 0; i < host.tnum; i++){
+                //closes bank office
                 pthread_join(bank_office[i], NULL);
+
+                //log closure
                 logBankOfficeClose(STDOUT_FILENO, i+1, bank_office[i]);
         } 
 }
 
-//reading user requests
+/**
+ * Reading user requests.
+**/
 void readRequests(){
         int n;
 
@@ -207,7 +299,9 @@ void readRequests(){
         }
 }
 
-//Destroing the server FIFO
+/**
+ * Destroing the server FIFO
+**/
 void serverFIFOclose(){
         if(unlink(SERVER_FIFO_PATH) == -1){
                 perror("unlink server FIFO failed!");
