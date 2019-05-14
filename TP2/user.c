@@ -125,10 +125,18 @@ int main(int argc, char const *argv[]){
 
         int fd = open(SERVER_FIFO_PATH, O_WRONLY);
 
-        if(logRequest(fd, client.value.header.pid, &client) < 0){
+        //send request
+        if(write(fd, &client, sizeof(client)) == -1){
+                perror("write() request failed!");
+                exit(1);
+        }
+
+        if(logRequest(STDOUT_FILENO, client.value.header.pid, &client) < 0){
                 perror("user logRequest() falied!");
                 exit(1);
         }
+
+        //recive reply..
        
         return 0;
 }
