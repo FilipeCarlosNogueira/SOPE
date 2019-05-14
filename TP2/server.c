@@ -248,7 +248,6 @@ void * bankOffice(){
         return NULL;
 }
 
-
 /**
  * Creates all the threads specified in the shell arguments.
  * After each creation, the funtion logs the oppening of the respective bank office.
