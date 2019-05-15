@@ -8,7 +8,7 @@
 
 #include "sope.h"
 
-#define MAX_REQUESTS 10
+#define MAX_REQUESTS 10 //increment this value befor delivery
 
 /**
  * Main structs.
@@ -17,8 +17,8 @@
 struct requests
 {
         tlv_request_t requestArray[MAX_REQUESTS];
-        int front;
-        int rear;
+        int first;
+        int last;
         int itemCount;
 };
 
@@ -42,12 +42,14 @@ bank_account_t bank_account[MAX_BANK_ACCOUNTS];
 
 int srv_fifo_id;
 
+bool server_shutdown = false;
+
 /**
  * ----- Queue funtions ------
 **/ 
 void inicializeRequests(){
-        queue.front = 0;
-        queue.rear = -1;
+        queue.first = 0;
+        queue.last = -1;
         queue.itemCount = 0;
 }
 
@@ -59,32 +61,83 @@ bool isFull() {
    return queue.itemCount == MAX_REQUESTS;
 }
 
-void insert(tlv_request_t data) {
+void insert(tlv_request_t request) {
 
    if(!isFull()) {
 	
-      if(queue.rear == MAX_REQUESTS-1) {
-        queue.rear = -1;            
+      if(queue.last == MAX_REQUESTS-1) {
+        queue.last = -1;            
       }       
 
-      queue.requestArray[++queue.rear] = data;
+      queue.requestArray[++queue.last] = request;
       queue.itemCount++;
    }
 }
 
-tlv_request_t removeData() {
-   tlv_request_t data = queue.requestArray[queue.front++];
+tlv_request_t removeRequest() {
+   tlv_request_t request = queue.requestArray[queue.first++];
 	
-   if(queue.front == MAX_REQUESTS) {
-      queue.front = 0;
+   if(queue.first == MAX_REQUESTS) {
+      queue.first = 0;
    }
 	
    queue.itemCount--;
-   return data;  
+   return request;  
 }
 /**
  * ----------------------------
 **/
+
+/**
+ * Funtion that generates the hash operation.
+**/
+char *hash(char * str){
+        FILE *fp;
+        char path[1035];
+        char command[50];
+
+        strcpy(command, "sha256sum ");
+        strcat(command, str);
+        
+        /* Open the command for reading. */
+        fp = popen(command, "r");
+        if (fp == NULL) {
+                perror("popen()");
+                exit(1);
+        }
+
+        /* Read the output a line at a time - output it. */
+        if(fgets(path, sizeof(path)-1, fp) == NULL) {
+                perror("");
+                exit (1);
+        }
+
+        //trim path string
+        if(path[strlen(path)-1] == '\n')
+                path[strlen(path)-1] = '\0';
+
+        //remove file name from path string
+        //in linux the structer is: (hash code) <file_name>
+        char *token = strtok(path, " ");
+
+        /* close */
+        pclose(fp);
+
+        return token;
+}
+
+// void credentialGenerator(int bank_account_id){
+//         char password[MAX_PASSWORD_LEN];
+
+//         if(bank_account_id == 0){
+//                 strcpy(password, host.password);
+//         }
+//         else{
+//                 strcpy(password, )
+//         }
+//         strcat(bank_account[bank_acount_id].salt, "123");
+//         strcpy(bank_account[bank_acount_id].hash, hash(bank_account[bank_account_id]));
+// }
 
 /**
  * parses the data provided by the arguments of the shell.
@@ -132,9 +185,10 @@ bool parsingArguments(int argc, char const *argv[]){
 **/
 void adminAcount(){
         bank_account[0].account_id = 0;
-        strcpy(bank_account[0].hash, "123");
-        strcpy(bank_account[0].salt, host.password);
-        strcat(bank_account[0].salt, "456");
+
+        strcpy(bank_account[0].hash, host.password);
+        strcpy(bank_account[0].salt, "123");
+
         bank_account[0].balance = 0;
 
         if(logAccountCreation(STDOUT_FILENO, 0, &bank_account[0]) < 0){
@@ -164,40 +218,31 @@ void serverFIFOopen(){
 }
 
 /**
- * Funtion that generates the hash operation.
+ * 
 **/
-char *hash(int algm){
-        FILE *fp;
-        char path[1035];
-        char command[50];
+bool operationManagment(tlv_request_t request){
 
-        sprintf(command, "sha256sum %d", algm);
-        
-        /* Open the command for reading. */
-        fp = popen(command, "r");
-        if (fp == NULL) {
-                perror("popen()");
-                exit(1);
+        switch(request.type){
+                case OP_CREATE_ACCOUNT:
+                break;
+
+                case OP_BALANCE:
+                break;
+
+                case OP_TRANSFER:
+                break;
+
+                case OP_SHUTDOWN:
+                break;
+
+                case __OP_MAX_NUMBER:
+                break;
+
+                default:
+                break;
         }
 
-        /* Read the output a line at a time - output it. */
-        if(fgets(path, sizeof(path)-1, fp) == NULL) {
-                perror("");
-                exit (1);
-        }
-
-        //trim path string
-        if(path[strlen(path)-1] == '\n')
-                path[strlen(path)-1] = '\0';
-
-        //remove file name from path string
-        //in linux the structer is: (hash code) <file_name>
-        char *token = strtok(path, " ");
-
-        /* close */
-        pclose(fp);
-
-        return token;
+        return false;
 }
 
 /**
@@ -219,24 +264,33 @@ void * bankOffice(){
 
         tlv_request_t request;
 
-        //loop only stops when the operation to shutdown the server is requested --> TO BE IMPLEMENTED.
-        while(1){
+        /**
+         * Loop only stops when:
+         * the operation to shutdown the server is requested 
+         * &
+         * all pendant requests were processed.
+        **/
+        while(!(server_shutdown && isEmpty())){
 
                 //locks mutex.
                 pthread_mutex_lock(&queueMutex);
 
+                //Infinit loop. The trhead is always looking for a request.
                 while (1){
 
                         //when there's a request in the queue, the request is removed.
                         if (!isEmpty()){
 
                                 //removing request from the queue.
-                                request = removeData();
+                                request = removeRequest();
 
                                 //--- auxiliar code ---
                                 write(STDOUT_FILENO, "\n[REQUEST]\n", 11);
                                 logRequest(STDOUT_FILENO, arg, &request);
                                 //---------------------
+
+                                server_shutdown = operationManagment(request);
+
                                 break;
                         }
                 }
@@ -256,11 +310,46 @@ void openBankOffices(){
         
         for (int i = 0; i < host.tnum; i++){
                 //creating bank office
-                pthread_create(&bank_office[i], NULL, bankOffice, NULL);
+                pthread_create(&bank_office[i], NULL, &bankOffice, NULL);
 
                 //log creation
                 logBankOfficeOpen(STDOUT_FILENO, i+1, bank_office[i]);
         } 
+}
+
+/**
+ * Authenticates the request.
+ * Returns true is valid, false otherwise.
+**/
+bool requestAuthentication(/*tlv_request_t * request*/){
+        //TO BE COMPLETED..
+
+        return true;
+}
+
+/**
+ * Reading user requests.
+**/
+void readRequests(){
+        int n;
+
+        tlv_request_t request;
+
+        //Inicializes the variables form the queue operations
+        inicializeRequests();
+
+        while (!server_shutdown){
+                do {
+                        n = read (srv_fifo_id, &request, sizeof(tlv_request_t));
+
+                }while (n<=0);
+
+                //Authentication of the request
+                if(requestAuthentication(/*&request*/)){
+                        //add request to the request queue
+                        insert(request); 
+                }
+        }
 }
 
 /**
@@ -275,27 +364,6 @@ void closeBankOffices(){
                 //log closure
                 logBankOfficeClose(STDOUT_FILENO, i+1, bank_office[i]);
         } 
-}
-
-/**
- * Reading user requests.
-**/
-void readRequests(){
-        int n;
-
-        tlv_request_t request;
-
-        inicializeRequests();
-
-        while (1){
-                do {
-                        n = read (srv_fifo_id, &request, 100);
-
-                }while (n<=0);
-
-                //add request to the request queue
-                insert(request); 
-        }
 }
 
 /**
