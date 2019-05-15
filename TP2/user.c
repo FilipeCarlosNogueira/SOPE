@@ -9,12 +9,13 @@
 #include "sope.h"
 
 tlv_request_t client;
+tlv_reply_t reply;
 
 char fifoname[16];
 
 /**
- * 
-**/
+ *
+ **/
 bool parsingCredentials(int argc, char const *argv[]){
         if(argc != 6) {
                 printf("Invalid Arguments Number\n");
@@ -22,7 +23,7 @@ bool parsingCredentials(int argc, char const *argv[]){
         }
 
         //acount_id
-        if(atoi(argv[1]) > MAX_BANK_ACCOUNTS){
+        if(atoi(argv[1]) > MAX_BANK_ACCOUNTS) {
                 printf("Invalid ID Number\n");
                 return false;
         }
@@ -31,7 +32,7 @@ bool parsingCredentials(int argc, char const *argv[]){
 
 
         //password
-        if(strlen(argv[2]) < MIN_PASSWORD_LEN || strlen(argv[2]) > MAX_PASSWORD_LEN){
+        if(strlen(argv[2]) < MIN_PASSWORD_LEN || strlen(argv[2]) > MAX_PASSWORD_LEN) {
                 printf("Invalid Password\n");
                 return false;
         }
@@ -40,7 +41,7 @@ bool parsingCredentials(int argc, char const *argv[]){
         }
 
         //op_delay_ms
-        if(atoi(argv[3]) > MAX_OP_DELAY_MS){
+        if(atoi(argv[3]) > MAX_OP_DELAY_MS) {
                 printf("Invalid Delay Number\n");
                 return false;
         }
@@ -62,7 +63,7 @@ bool parsingCredentials(int argc, char const *argv[]){
 
                 //new ID
                 newID = atoi(strtok((char *) argv[5], " "));
-                if(newID > MAX_BANK_ACCOUNTS){
+                if(newID > MAX_BANK_ACCOUNTS) {
                         printf("Invalid newID Number\n");
                         return false;
                 }
@@ -74,7 +75,7 @@ bool parsingCredentials(int argc, char const *argv[]){
 
                 //Password
                 strcpy(password, strtok(NULL, " "));
-                if(strlen(password) < MIN_PASSWORD_LEN || strlen(password) > MAX_PASSWORD_LEN){
+                if(strlen(password) < MIN_PASSWORD_LEN || strlen(password) > MAX_PASSWORD_LEN) {
                         printf("Invalid newPassword\n");
                         return false;
                 }
@@ -118,6 +119,10 @@ bool parsingCredentials(int argc, char const *argv[]){
         //Length
         client.length = sizeof(client);
 
+        //Reply
+        reply.value.header.account_id = client.value.header.account_id;
+        reply.type = client.type;
+
         return true;
 }
 
@@ -131,14 +136,12 @@ void receiveFIFO(){
 
         int fd,n;
 
-        tlv_reply_t reply;
-
         strcpy(fifoname,USER_FIFO_PATH_PREFIX);
         strcpy(fifoname,mypid);
 
 
         //open
-        if((fd = open(fifoname, O_RDONLY)) == -1){
+        if((fd = open(fifoname, O_RDONLY)) == -1) {
                 perror("Open user FIFO failed!");
                 exit(1);
         }
@@ -147,23 +150,23 @@ void receiveFIFO(){
         do {
                 n = read(fd, &reply, 100);
 
-        }while (n<=0);
+        } while (n<=0);
 
         //log
-        if(logReply(STDOUT_FILENO, pid, &reply) < 0){
+        if(logReply(STDOUT_FILENO, pid, &reply) < 0) {
                 perror("user logReply() failed!");
                 exit(1);
         }
         //imprimir para .txt ..
-  }
+}
 
 
 /**
- * 
-**/
+ *
+ **/
 void userFIFOclose(){
 
-        if(unlink(fifoname) == -1){
+        if(unlink(fifoname) == -1) {
                 perror("unlink user FIFO failed!");
                 exit(1);
         }
@@ -171,29 +174,38 @@ void userFIFOclose(){
 
 /**
  * Main funtion.
-**/
+ **/
 int main(int argc, char const *argv[]){
-
         //parse user introduced info
         if(!parsingCredentials(argc, argv))
                 return -1;
 
-        int fd = open(SERVER_FIFO_PATH, O_WRONLY);
+        int fd;
+        if((fd = open(SERVER_FIFO_PATH, O_WRONLY)) == 1) {
+                reply.value.header.ret_code = 1;
+        }
 
         //send request
-        if(write(fd, &client, sizeof(client)) == -1){
+        if(write(fd, &client, sizeof(client)) == -1) {
                 perror("write() request failed!");
                 exit(1);
         }
 
         //log send request
-        if(logRequest(STDOUT_FILENO, client.value.header.pid, &client) < 0){
+        if(logRequest(STDOUT_FILENO, client.value.header.pid, &client) < 0) {
                 perror("user logRequest() failed!");
                 exit(1);
         }
 
         //create,open,read and log user FIFO,
         //receiveFIFO();
+
+        reply.length = sizeof(reply);
+
+        if(logReply(STDOUT_FILENO, client.value.header.pid, &reply) < 0) {
+                perror("user logRequest() failed!");
+                exit(1);
+        }
 
         //close fifo
         //userFIFOclose();
