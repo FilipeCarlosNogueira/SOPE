@@ -81,6 +81,8 @@ void serverFIFOopen(){
 
         //openning the srv FIFO in READ_ONLY
         if((srv_fifo_id = open(SERVER_FIFO_PATH, O_RDONLY)) == -1) {
+                // tlv_reply_t reply;
+                // reply.
                 perror("Open server FIFO failed!");
                 exit(1);
         }

@@ -12,7 +12,7 @@
 #include "variables.h"
 
 /**
- * ----- Queue funtions ------
+ * 
  **/
 void inicializeRequests(){
         queue.first = 0;
@@ -20,14 +20,23 @@ void inicializeRequests(){
         queue.itemCount = 0;
 }
 
+/**
+ * 
+ **/
 bool isEmpty() {
         return queue.itemCount == 0;
 }
 
+/**
+ * 
+ **/
 bool isFull() {
         return queue.itemCount == MAX_REQUESTS;
 }
 
+/**
+ * 
+ **/
 void insert(tlv_request_t request) {
 
         if(!isFull()) {
@@ -41,6 +50,9 @@ void insert(tlv_request_t request) {
         }
 }
 
+/**
+ * 
+ **/
 tlv_request_t removeRequest() {
         tlv_request_t request = queue.requestArray[queue.first++];
 
@@ -51,6 +63,3 @@ tlv_request_t removeRequest() {
         queue.itemCount--;
         return request;
 }
-/**
- * ----------------------------
- **/

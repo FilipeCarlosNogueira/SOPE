@@ -70,6 +70,12 @@ void saltGenerator(char* salt){
         }
 }
 
+/**
+ * Manages the:
+ *      creation of the salt;
+ *      computation of the hash;
+ * Attributes the calculated salt and hash to the bank_office[current_ID].
+**/ 
 void generateCredentials(int bank_account_id){
         char pass_salt[MAX_PASSWORD_LEN+SALT_LEN];
 
@@ -83,6 +89,9 @@ void generateCredentials(int bank_account_id){
         strcpy(bank_account[bank_account_id].hash, hash(pass_salt));
 }
 
+/**
+ * Identifies the TPID of the current thread.
+**/ 
 int currentThreadPID(){
         int arg;
 
@@ -116,6 +125,10 @@ void adminAcount(){
                 exit(1);
         }
 }
+
+/**
+ * --- [OPERATION FUNTIONS] ---
+**/
 
 /**
  * 
@@ -228,6 +241,14 @@ void Shutdown(tlv_request_t request){
         if(request.value.header.account_id == 0) {
                 reply.value.shutdown.active_offices = host.tnum--;
         }else {reply.value.header.ret_code = 5;}
+
+        /**
+         * FIFO permitions changed to "only read".
+        **/
+        if(fchmod(srv_fifo_id, 0444) == -1){
+                perror("fchmod() failed!");
+                exit(1);
+        }
 
 
         if(logReply(STDOUT_FILENO, currentThreadPID(), &reply) < 0) {
