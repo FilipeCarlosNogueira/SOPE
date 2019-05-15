@@ -258,10 +258,12 @@ void getBalance(tlv_request_t request){
         reply.type = request.type;
         reply.value.header.account_id = request.value.header.account_id;
 
-        if(bank_account[request.value.header.account_id].account_id == request.value.header.account_id) {
-                reply.value.header.ret_code = 0;
-                reply.value.balance.balance = bank_account[request.value.header.account_id].balance;
-        } else {reply.value.header.ret_code = 7;}
+        if(request.value.header.account_id != 0) {
+                if(bank_account[request.value.header.account_id].account_id == request.value.header.account_id) {
+                        reply.value.header.ret_code = 0;
+                        reply.value.balance.balance = bank_account[request.value.header.account_id].balance;
+                } else {reply.value.header.ret_code = 7;}
+        } else {reply.value.header.ret_code = 5;}
 
 
         if(logReply(STDOUT_FILENO, request.value.header.pid, &reply) < 0) {
@@ -276,22 +278,24 @@ void opTransfer(tlv_request_t request){
         reply.type = request.type;
         reply.value.header.account_id = request.value.header.account_id;
 
-        if(bank_account[request.value.header.account_id].account_id == request.value.header.account_id) {
-                if(bank_account[request.value.transfer.account_id].account_id == request.value.transfer.account_id) {
-                        if(request.value.header.account_id != request.value.transfer.account_id) {
-                                if(bank_account[request.value.header.account_id].balance < request.value.transfer.amount) {
-                                        if(request.value.transfer.amount > MAX_BALANCE) {
+        if(request.value.header.account_id != 0) {
+                if(bank_account[request.value.header.account_id].account_id == request.value.header.account_id) {
+                        if(bank_account[request.value.transfer.account_id].account_id == request.value.transfer.account_id) {
+                                if(request.value.header.account_id != request.value.transfer.account_id) {
+                                        if(bank_account[request.value.header.account_id].balance >= request.value.transfer.amount) {
+                                                if(request.value.transfer.amount <= MAX_BALANCE) {
 
-                                                bank_account[request.value.header.account_id].balance-=request.value.transfer.amount;
-                                                bank_account[request.value.transfer.account_id].balance+=request.value.transfer.amount;
-                                                reply.value.header.ret_code = 0;
-                                                reply.value.transfer.balance = request.value.transfer.amount;
+                                                        bank_account[request.value.header.account_id].balance-=request.value.transfer.amount;
+                                                        bank_account[request.value.transfer.account_id].balance+=request.value.transfer.amount;
+                                                        reply.value.header.ret_code = 0;
+                                                        reply.value.transfer.balance = request.value.transfer.amount;
 
-                                        } else {reply.value.header.ret_code = 10;}
-                                } else {reply.value.header.ret_code = 9;}
-                        } else {reply.value.header.ret_code = 8;}
+                                                } else {reply.value.header.ret_code = 10;}
+                                        } else {reply.value.header.ret_code = 9;}
+                                } else {reply.value.header.ret_code = 8;}
+                        } else {reply.value.header.ret_code = 7;}
                 } else {reply.value.header.ret_code = 7;}
-        } else {reply.value.header.ret_code = 7;}
+        } else {reply.value.header.ret_code = 5;}
 
 
         if(logReply(STDOUT_FILENO, request.value.header.pid, &reply) < 0) {
