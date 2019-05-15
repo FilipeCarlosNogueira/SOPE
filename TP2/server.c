@@ -220,6 +220,9 @@ void serverFIFOopen(){
 void createAccount(tlv_request_t request){
         tlv_reply_t reply;
 
+        reply.type = request.type;
+        reply.value.header.account_id = request.value.header.account_id;
+
         if(request.value.header.account_id == 0) {
                 if(bank_account[request.value.create.account_id].account_id != request.value.create.account_id) {
                         if(bank_account[request.value.header.account_id].account_id == request.value.header.account_id) {
@@ -252,6 +255,9 @@ void createAccount(tlv_request_t request){
 void getBalance(tlv_request_t request){
         tlv_reply_t reply;
 
+        reply.type = request.type;
+        reply.value.header.account_id = request.value.header.account_id;
+
         if(bank_account[request.value.header.account_id].account_id == request.value.header.account_id) {
                 reply.value.header.ret_code = 0;
                 reply.value.balance.balance = bank_account[request.value.header.account_id].balance;
@@ -266,6 +272,10 @@ void getBalance(tlv_request_t request){
 
 void opTransfer(tlv_request_t request){
         tlv_reply_t reply;
+
+        reply.type = request.type;
+        reply.value.header.account_id = request.value.header.account_id;
+
         if(bank_account[request.value.header.account_id].account_id == request.value.header.account_id) {
                 if(bank_account[request.value.transfer.account_id].account_id == request.value.transfer.account_id) {
                         if(request.value.header.account_id != request.value.transfer.account_id) {
@@ -292,9 +302,11 @@ void opTransfer(tlv_request_t request){
 
 void Shutdown(tlv_request_t request){
         tlv_reply_t reply;
+        reply.type = request.type;
+        reply.value.header.account_id = request.value.header.account_id;
 
         if(request.value.header.account_id == 0) {
-                reply.value.shutdown.active_offices = server.tnum--;
+                reply.value.shutdown.active_offices = host.tnum--;
         }else {reply.value.header.ret_code = 5;}
 
 
@@ -324,7 +336,6 @@ bool operationManagment(tlv_request_t request){
 
         case OP_SHUTDOWN:
                 Shutdown(request);
-                reply.type = request.type;
                 return true;
                 break;
 
@@ -334,7 +345,6 @@ bool operationManagment(tlv_request_t request){
         default:
                 break;
         }
-        reply.type = request.type;
         return false;
 }
 
