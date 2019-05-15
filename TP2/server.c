@@ -42,8 +42,6 @@ bank_account_t bank_account[MAX_BANK_ACCOUNTS];
 
 int srv_fifo_id;
 
-tlv_reply_t reply;
-
 bool server_shutdown = false;
 
 /**
@@ -220,7 +218,8 @@ void serverFIFOopen(){
 }
 
 void createAccount(tlv_request_t request){
- printf("request: %d, bank_acc: %d\n", request.value.create.account_id,bank_account[request.value.create.account_id].account_id);
+        tlv_reply_t reply;
+
         if(request.value.header.account_id == 0) {
                 if(bank_account[request.value.create.account_id].account_id != request.value.create.account_id) {
                         if(bank_account[request.value.header.account_id].account_id == request.value.header.account_id) {
@@ -242,16 +241,31 @@ void createAccount(tlv_request_t request){
                         } else {reply.value.header.ret_code = 7;}
                 } else {reply.value.header.ret_code = 6;}
         }else {reply.value.header.ret_code = 5;}
+
+
+        if(logReply(STDOUT_FILENO, request.value.header.pid, &reply) < 0) {
+                perror("user logRequest() falied!");
+                exit(1);
+        }
 }
 
 void getBalance(tlv_request_t request){
+        tlv_reply_t reply;
+
         if(bank_account[request.value.header.account_id].account_id == request.value.header.account_id) {
                 reply.value.header.ret_code = 0;
                 reply.value.balance.balance = bank_account[request.value.header.account_id].balance;
         } else {reply.value.header.ret_code = 7;}
+
+
+        if(logReply(STDOUT_FILENO, request.value.header.pid, &reply) < 0) {
+                perror("user logRequest() falied!");
+                exit(1);
+        }
 }
 
 void opTransfer(tlv_request_t request){
+        tlv_reply_t reply;
         if(bank_account[request.value.header.account_id].account_id == request.value.header.account_id) {
                 if(bank_account[request.value.transfer.account_id].account_id == request.value.transfer.account_id) {
                         if(request.value.header.account_id != request.value.transfer.account_id) {
@@ -268,12 +282,26 @@ void opTransfer(tlv_request_t request){
                         } else {reply.value.header.ret_code = 8;}
                 } else {reply.value.header.ret_code = 7;}
         } else {reply.value.header.ret_code = 7;}
+
+
+        if(logReply(STDOUT_FILENO, request.value.header.pid, &reply) < 0) {
+                perror("user logRequest() falied!");
+                exit(1);
+        }
 }
 
 void Shutdown(tlv_request_t request){
+        tlv_reply_t reply;
+
         if(request.value.header.account_id == 0) {
-                reply.value.shutdown.active_offices = 0;
+                reply.value.shutdown.active_offices = server.tnum--;
         }else {reply.value.header.ret_code = 5;}
+
+
+        if(logReply(STDOUT_FILENO, request.value.header.pid, &reply) < 0) {
+                perror("user logRequest() falied!");
+                exit(1);
+        }
 }
 
 /**
@@ -355,11 +383,6 @@ void * bankOffice(){
                                 //---------------------
 
                                 server_shutdown = operationManagment(request);
-
-                                if(logReply(STDOUT_FILENO, request.value.header.pid, &reply) < 0) {
-                                        perror("user logRequest() falied!");
-                                        exit(1);
-                                }
 
                                 break;
                         }
