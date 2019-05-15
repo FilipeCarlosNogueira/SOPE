@@ -13,7 +13,7 @@ tlv_request_t client;
 bool parsingCredentials(int argc, char const *argv[]){
         //aux
         printf("argc n : %d",argc);
-        if(argc != 6 && (atoi(argv[4]) == 1 || atoi(argv[4]) == 3)) {
+        if(argc != 5 && (atoi(argv[4]) == 1 || atoi(argv[4]) == 3)) {
                 printf("Invalid Arguments Number\n");
                 return false;
         }
@@ -186,10 +186,10 @@ int main(int argc, char const *argv[]){
         }
 
         //create,open,read and log user FIFO,
-        receiveFIFO();
+        //receiveFIFO();
 
         //close fifo
-        userFIFOclose();
+        //userFIFOclose();
 
         return 0;
 }
