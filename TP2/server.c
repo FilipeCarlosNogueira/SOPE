@@ -94,11 +94,13 @@ tlv_request_t removeRequest() {
 char *hash(char * str){
         FILE *fp;
         char path[1035];
-        char command[50];
+        char command[500];
 
-        strcpy(command, "sha256sum ");
+        //strcpy(command, "sha256sum ");
+        strcpy(command, "echo -n ");
         strcat(command, str);
-        
+        strcat(command, " | shasum -a 256 ");
+
         /* Open the command for reading. */
         fp = popen(command, "r");
         if (fp == NULL) {
@@ -107,8 +109,8 @@ char *hash(char * str){
         }
 
         /* Read the output a line at a time - output it. */
-        if(fgets(path, sizeof(path)-1, fp) == NULL) {
-                perror("");
+        if(fscanf(fp, "%s", path) == 0) {
+                perror("has funtion failed!");
                 exit (1);
         }
 
@@ -120,24 +122,30 @@ char *hash(char * str){
         //in linux the structer is: (hash code) <file_name>
         char *token = strtok(path, " ");
 
+
         /* close */
         pclose(fp);
 
         return token;
 }
 
-// void credentialGenerator(int bank_account_id){
-//         char password[MAX_PASSWORD_LEN];
+/**
+ * Generates a random salt.
+**/
+void saltGenerator(char* salt){
 
-//         if(bank_account_id == 0){
-//                 strcpy(password, host.password);
-//         }
-//         else{
-//                 strcpy(password, )
-//         }
-//         strcat(bank_account[bank_acount_id].salt, "123");
-//         strcpy(bank_account[bank_acount_id].hash, hash(bank_account[bank_account_id]));
-// }
+        strcpy(salt, "");
+
+        int random;
+        char ch[2];
+        char aux[] = "abcdefghijklmnopqrstuvwxyz1234567890";
+
+        for(int i = 0; i < SALT_LEN; i++){
+                random = (rand() % strlen(aux));
+                sprintf(ch, "%c", aux[random]);
+                strcat(salt, ch);
+        }
+}
 
 /**
  * parses the data provided by the arguments of the shell.
@@ -184,13 +192,25 @@ bool parsingArguments(int argc, char const *argv[]){
  * logs its creation.
 **/
 void adminAcount(){
+
+        char pass_salt[MAX_PASSWORD_LEN+SALT_LEN];
+
+        //admin account ID
         bank_account[0].account_id = 0;
 
-        strcpy(bank_account[0].hash, host.password);
-        strcpy(bank_account[0].salt, "123");
+        //admin account salt
+        saltGenerator(bank_account[0].salt);
 
+        //admin account hash
+        strcpy(pass_salt, host.password);
+        strcat(pass_salt, bank_account[0].salt);
+
+        strcpy(bank_account[0].hash, hash(pass_salt));
+
+        //admin account balance
         bank_account[0].balance = 0;
 
+        //log creation of admin
         if(logAccountCreation(STDOUT_FILENO, 0, &bank_account[0]) < 0){
                 perror("Creation of Admin Acount failed!");
                 exit(1);
@@ -217,6 +237,10 @@ void serverFIFOopen(){
         }
 }
 
+tlv_request_t operationX(tlv_request_t request){
+        return request;
+}
+
 /**
  * 
 **/
@@ -224,21 +248,27 @@ bool operationManagment(tlv_request_t request){
 
         switch(request.type){
                 case OP_CREATE_ACCOUNT:
+                        operationX(request);
                 break;
 
                 case OP_BALANCE:
+                        operationX(request);
                 break;
 
                 case OP_TRANSFER:
+                        operationX(request);
                 break;
 
                 case OP_SHUTDOWN:
+                        operationX(request);
                 break;
 
                 case __OP_MAX_NUMBER:
+                        operationX(request);
                 break;
 
                 default:
+                        operationX(request);
                 break;
         }
 
@@ -318,12 +348,11 @@ void openBankOffices(){
 }
 
 /**
- * Authenticates the request.
+ * Frirst authentication of the request.
+ * Validates the combination of the id of the account and the given password.
  * Returns true is valid, false otherwise.
 **/
 bool requestAuthentication(/*tlv_request_t * request*/){
-        //TO BE COMPLETED..
-
         return true;
 }
 
@@ -335,7 +364,7 @@ void readRequests(){
 
         tlv_request_t request;
 
-        //Inicializes the variables form the queue operations
+        //Inicializes the variables for the queue operations
         inicializeRequests();
 
         while (!server_shutdown){
@@ -377,6 +406,10 @@ void serverFIFOclose(){
 }
 
 int main(int argc, char const *argv[]){
+
+        time_t t;
+        /* Intializes random number generator */
+        srand((unsigned) time(&t));
         
         //parses the data provided by the arguments of the shell
         if(!parsingArguments(argc, argv))
