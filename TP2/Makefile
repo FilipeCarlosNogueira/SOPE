@@ -11,9 +11,9 @@ user: $(OBJECTS2)
 	gcc $(OBJECTS2) -o user
 
 
-server.o:	sope.h	constants.h	types.h
-user.o:	sope.h	constants.h	types.h
-log.o:	sope.h	constants.h	types.h
+server.o:	sope.h	constants.h	types.h	operation.h	variables.h	queue.h
+user.o:	sope.h	constants.h	types.h	operation.h	variables.h	queue.h
+log.o:	sope.h	constants.h	types.h	operation.h	variables.h	queue.h
 
 clean:
 	rm *.o server user
