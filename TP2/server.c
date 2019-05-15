@@ -6,6 +6,12 @@
 #include <pthread.h>
 #include <unistd.h>
 
+#ifdef __APPLE__
+#include <dispatch/dispatch.h>
+#else
+#include <semaphore.h>
+#endif
+
 #include "sope.h"
 #include "operation.h"
 #include "queue.h"
@@ -13,9 +19,7 @@
 /**
  * Server data.
  **/
-
 struct requests queue;
-pthread_mutex_t queueMutex = PTHREAD_MUTEX_INITIALIZER;
 
 struct server host;
 
@@ -67,7 +71,7 @@ bool parsingArguments(int argc, char const *argv[]){
 }
 
 /**
- * Creating and opening in read only the server FIFO.
+ * Creating and opening the server FIFO in read only.
  **/
 void serverFIFOopen(){
         //DELETE BEFORE DELEVERY
@@ -103,14 +107,14 @@ void * bankOffice(){
 
         /**
          * Loop only stops when:
-         * the operation to shutdown the server is requested
-         * &
-         * all pendant requests were processed.
+         *      the operation to shutdown the server is requested
+         *      &
+         *      all pendant requests were processed.
          **/
         while(!(server_shutdown && isEmpty())) {
 
-                //locks mutex.
-                pthread_mutex_lock(&queueMutex);
+                //locks the semaphore
+                semafore_wait();
 
                 //Infinit loop. The trhead is always looking for a request.
                 while (1) {
@@ -131,9 +135,6 @@ void * bankOffice(){
                                 break;
                         }
                 }
-
-                //unlock mutex.
-                pthread_mutex_unlock(&queueMutex);
         }
 
         return NULL;
@@ -160,7 +161,7 @@ void openBankOffices(){
  * Returns true is valid, false otherwise.
  **/
 bool requestAuthentication(/*tlv_request_t * request*/){
-
+        //TDB.....
         return true;
 }
 
@@ -185,6 +186,9 @@ void readRequests(){
                 if(requestAuthentication(/*&request*/)) {
                         //add request to the request queue
                         insert(request);
+
+                        //unlocks the semaphore
+                        semafore_post();
                 }
         }
 }
@@ -213,11 +217,17 @@ void serverFIFOclose(){
         }
 }
 
+/**
+ * Main funtion.
+ **/
 int main(int argc, char const *argv[]){
 
         time_t t;
         /* Intializes random number generator */
         srand((unsigned) time(&t));
+
+        //inicializes the semafore.
+        semafore_init();
         
         //parses the data provided by the arguments of the shell
         if(!parsingArguments(argc, argv))

@@ -127,11 +127,14 @@ void adminAcount(){
 }
 
 /**
- * --- [OPERATION FUNTIONS] ---
+ * //-----------//-----------//-----------//-----------//-----------
+ * -------------------- [OPERATION FUNTIONS] -----------------------
+ * //-----------//-----------//-----------//-----------//-----------
 **/
 
 /**
- * 
+ * Executes the operaton Create.
+ * Generates the reply accordingly.
 **/
 void createAccount(tlv_request_t request){
         tlv_reply_t reply;
@@ -166,6 +169,7 @@ void createAccount(tlv_request_t request){
 
         reply.length = sizeof(reply);
 
+        //logging reply
         if(logReply(STDOUT_FILENO, currentThreadPID(), &reply) < 0) {
                 perror("user logRequest() falied!");
                 exit(1);
@@ -173,7 +177,8 @@ void createAccount(tlv_request_t request){
 }
 
 /**
- * 
+ * Executes the operaton Balance.
+ * Generates the reply accordingly.
 **/
 void getBalance(tlv_request_t request){
         tlv_reply_t reply;
@@ -188,7 +193,9 @@ void getBalance(tlv_request_t request){
                 } else {reply.value.header.ret_code = 7;}
         } else {reply.value.header.ret_code = 5;}
 
+        reply.length = sizeof(reply);
 
+        //logging reply
         if(logReply(STDOUT_FILENO, currentThreadPID(), &reply) < 0) {
                 perror("user logRequest() falied!");
                 exit(1);
@@ -196,7 +203,8 @@ void getBalance(tlv_request_t request){
 }
 
 /**
- * 
+ * Executes the operaton tranfer.
+ * Generates the reply accordingly.
 **/
 void opTransfer(tlv_request_t request){
         tlv_reply_t reply;
@@ -225,7 +233,9 @@ void opTransfer(tlv_request_t request){
                 }else {reply.value.header.ret_code = 5;}
         } else {reply.value.header.ret_code = 5;}
 
+        reply.length = sizeof(reply);
 
+        //logging reply
         if(logReply(STDOUT_FILENO, currentThreadPID(), &reply) < 0) {
                 perror("user logRequest() falied!");
                 exit(1);
@@ -233,7 +243,9 @@ void opTransfer(tlv_request_t request){
 }
 
 /**
- * 
+ * Executes operation Shut Down.
+ * Generates the reply.
+ * Changes the permition of the server FIFO to "read only"
 **/
 void Shutdown(tlv_request_t request){
         tlv_reply_t reply;
@@ -244,15 +256,15 @@ void Shutdown(tlv_request_t request){
                 reply.value.shutdown.active_offices = host.tnum--;
         }else {reply.value.header.ret_code = 5;}
 
-        /**
-         * FIFO permitions changed to "only read".
-        **/
+        reply.length = sizeof(reply);
+
+        //FIFO permitions changed to "read only"
         if(fchmod(srv_fifo_id, 0444) == -1){
                 perror("fchmod() failed!");
                 exit(1);
         }
 
-
+        //logging reply
         if(logReply(STDOUT_FILENO, currentThreadPID(), &reply) < 0) {
                 perror("user logRequest() falied!");
                 exit(1);
@@ -260,13 +272,9 @@ void Shutdown(tlv_request_t request){
 }
 
 /**
- *
+ * Manages the operations based on the request given.
  **/
 bool operationManagment(tlv_request_t request){
-
-        //auxiliar code
-        printf("\n[OPERATION]\n\n");
-        //------------
 
         //auxiliar code
         printf("\n[REPLY]\n");

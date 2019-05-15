@@ -2,7 +2,7 @@
 
 #include "sope.h"
 
-#define MAX_REQUESTS 10 //increment this value befor delivery
+#define MAX_REQUESTS 100 //increment this value befor delivery
 
 /**
  * Main structs.
@@ -14,6 +14,12 @@ struct requests
         int first;
         int last;
         int itemCount;
+
+        #ifdef __APPLE__
+            dispatch_semaphore_t semafore;
+        #else
+            sem_t semafore;
+        #endif
 };
 
 struct server
@@ -26,14 +32,21 @@ struct server
  * Server data.
  **/
 
+//all the variables necessary to the queue
 extern struct requests queue;
-extern pthread_mutex_t queueMutex;
 
+//munber of threads to create
+//Admin password
 extern struct server host;
 
+//pointer for the dynamic pthread_t array  
 extern pthread_t * bank_office;
+
+//bank accounts struct array
 extern bank_account_t bank_account[MAX_BANK_ACCOUNTS];
 
+//server fifo identifier
 extern int srv_fifo_id;
 
+//sever shutdown flag
 extern bool server_shutdown;

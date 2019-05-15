@@ -127,7 +127,8 @@ bool parsingCredentials(int argc, char const *argv[]){
 }
 
 /**
- * Creating, opening, reading and logging the user FIFO (tmp/secure_XXXXX, XXXXX=PID)
+ * Creating and opening the user FIFO (tmp/secure_XXXXX, XXXXX=PID).
+ * Reading and logging the server reply.
  **/
 void receiveFIFO(){
         int pid = getpid();
@@ -152,20 +153,18 @@ void receiveFIFO(){
 
         } while (n<=0);
 
-        //log
+        //log reply
         if(logReply(STDOUT_FILENO, pid, &reply) < 0) {
                 perror("user logReply() failed!");
                 exit(1);
         }
-        //imprimir para .txt ..
 }
 
 
 /**
- *
+ * Closes the user FIFO.
  **/
 void userFIFOclose(){
-
         if(unlink(fifoname) == -1) {
                 perror("unlink user FIFO failed!");
                 exit(1);
@@ -199,8 +198,6 @@ int main(int argc, char const *argv[]){
 
         //create,open,read and log user FIFO,
         //receiveFIFO();
-
-        reply.length = sizeof(reply);
 
         if(logReply(STDOUT_FILENO, client.value.header.pid, &reply) < 0) {
                 perror("user logRequest() failed!");
