@@ -149,7 +149,7 @@ void receiveFIFO(){
 
         //read
         do {
-                n = read(fd, &reply, 100);
+                n = read(fd, &reply, sizeof(reply));
 
         } while (n<=0);
 
@@ -199,7 +199,7 @@ int main(int argc, char const *argv[]){
         //create,open,read and log user FIFO,
         //receiveFIFO();
 
-        if(logReply(STDOUT_FILENO, client.value.header.pid, &reply) < 0) {
+        if(logReply(STDOUT_FILENO, getpid(), &reply) < 0) {
                 perror("user logRequest() failed!");
                 exit(1);
         }

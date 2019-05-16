@@ -156,12 +156,75 @@ void openBankOffices(){
 }
 
 /**
+ * Compares if the password given in the request is the same has the bank account.
+**/
+bool validateCredentials(char * request_pass, bank_account_t * bank_account){
+
+        char pass_salt[MAX_PASSWORD_LEN+SALT_LEN];
+        char * hash_compare;
+
+        strcpy(pass_salt, request_pass);
+        strcat(pass_salt, bank_account->salt);
+
+        hash_compare = hash(pass_salt);
+
+        if(strcmp(hash_compare, bank_account->hash) != 0){
+                return false;
+        }
+
+        return true;
+}
+/**
  * Frirst authentication of the request.
  * Validates the combination of the id of the account and the given password.
  * Returns true is valid, false otherwise.
  **/
-bool requestAuthentication(/*tlv_request_t * request*/){
-        //TDB.....
+bool requestAuthentication(tlv_request_t * request){
+        
+        tlv_reply_t reply;
+        int flag = 0;
+
+        //If account was not yet created
+        if(bank_account[request->value.header.account_id].account_id != request->value.header.account_id){
+                flag = 1;
+        }
+        //hash of bank account was not define
+        if(strlen(bank_account[request->value.header.account_id].hash) == 0){
+                flag = 1;
+        }
+        //salt of bank account was not define
+        if(strlen(bank_account[request->value.header.account_id].salt) == 0){
+                flag = 1;
+        }
+
+        //Validate account login Credentials
+        if(!validateCredentials(request->value.header.password, &bank_account[request->value.header.account_id])){
+                flag = 2;
+        }
+
+        //If request was not valid 
+        if(flag){
+                reply.type = request->type;
+                reply.value.header.account_id = request->value.header.account_id;
+
+                //ID not found
+                if(flag == 1) reply.value.header.ret_code = RC_ID_NOT_FOUND;
+
+                //login failed
+                if(flag == 2) reply.value.header.ret_code = RC_LOGIN_FAIL;
+
+                reply.value.balance.balance = 0;
+                reply.length = sizeof(reply);
+
+                //logging reply
+                if(logReply(STDOUT_FILENO, getpid(), &reply) < 0) {
+                        perror("user logRequest() falied!");
+                        exit(1);
+                }
+
+                return false;
+        }
+
         return true;
 }
 
@@ -183,7 +246,7 @@ void readRequests(){
                 } while (n<=0);
 
                 //Authentication of the request
-                if(requestAuthentication(/*&request*/)) {
+                if(requestAuthentication(&request)) {
                         //add request to the request queue
                         insert(request);
 
@@ -211,6 +274,9 @@ void closeBankOffices(){
  * Destroing the server FIFO
  **/
 void serverFIFOclose(){
+
+        close(srv_fifo_id);
+
         if(unlink(SERVER_FIFO_PATH) == -1) {
                 perror("unlink server FIFO failed!");
                 exit(1);

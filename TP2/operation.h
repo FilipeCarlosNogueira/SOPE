@@ -19,10 +19,14 @@ char *hash(char * str){
         char path[1035];
         char command[500];
 
-        //strcpy(command, "sha256sum ");
+        #ifdef __APPLE__
         strcpy(command, "echo -n ");
         strcat(command, str);
         strcat(command, " | shasum -a 256 ");
+        #else
+        strcpy(command, "sha256sum ");
+        #endif
+        
 
         /* Open the command for reading. */
         fp = popen(command, "r");
@@ -71,12 +75,13 @@ void saltGenerator(char* salt){
 }
 
 /**
+ * Only works for the bank accounts.
  * Manages the:
  *      creation of the salt;
  *      computation of the hash;
  * Attributes the calculated salt and hash to the bank_office[current_ID].
 **/ 
-void generateCredentials(int bank_account_id){
+void generateBankCredentials(int bank_account_id){
         char pass_salt[MAX_PASSWORD_LEN+SALT_LEN];
 
         //bank account salt
@@ -114,7 +119,7 @@ void adminAcount(){
         bank_account[0].account_id = 0;
 
         //admin account salt & hash
-        generateCredentials(0);
+        generateBankCredentials(0);
 
         //admin account balance
         bank_account[0].balance = 0;
@@ -149,7 +154,7 @@ void createAccount(tlv_request_t request){
                                         if(request.value.create.balance <= MAX_BALANCE) {
                                                 bank_account[request.value.create.account_id].account_id = request.value.create.account_id;
 
-                                                generateCredentials(request.value.create.account_id);
+                                                generateBankCredentials(request.value.create.account_id);
 
                                                 bank_account[request.value.create.account_id].balance = request.value.create.balance;
 
