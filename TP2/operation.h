@@ -85,13 +85,13 @@ void generateBankCredentials(int bank_account_id){
         char pass_salt[MAX_PASSWORD_LEN+SALT_LEN];
 
         //bank account salt
-        saltGenerator(bank_account[bank_account_id].salt);
+        saltGenerator(bank_account[bank_account_id].account.salt);
 
         //bank account hash
         strcpy(pass_salt, host.password);
-        strcat(pass_salt, bank_account[bank_account_id].salt);
+        strcat(pass_salt, bank_account[bank_account_id].account.salt);
 
-        strcpy(bank_account[bank_account_id].hash, hash(pass_salt));
+        strcpy(bank_account[bank_account_id].account.hash, hash(pass_salt));
 }
 
 /**
@@ -116,16 +116,16 @@ int currentThreadPID(){
 void adminAcount(){
 
         //admin account ID
-        bank_account[0].account_id = 0;
+        bank_account[0].account.account_id = 0;
 
         //admin account salt & hash
         generateBankCredentials(0);
 
         //admin account balance
-        bank_account[0].balance = 0;
+        bank_account[0].account.balance = 0;
 
         //log creation of admin
-        if(logAccountCreation(STDOUT_FILENO, 0, &bank_account[0]) < 0){
+        if(logAccountCreation(STDOUT_FILENO, 0, &bank_account[0].account) < 0){
                 perror("Creation of Admin Acount failed!");
                 exit(1);
         }
@@ -141,27 +141,27 @@ void adminAcount(){
  * Executes the operaton Create.
  * Generates the reply accordingly.
 **/
-void createAccount(tlv_request_t request){
+tlv_reply_t createAccount(tlv_request_t *request){
         tlv_reply_t reply;
 
-        reply.type = request.type;
-        reply.value.header.account_id = request.value.header.account_id;
+        reply.type = request->type;
+        reply.value.header.account_id = request->value.header.account_id;
 
-        if(request.value.header.account_id == 0) {
-                if(bank_account[request.value.create.account_id].account_id != request.value.create.account_id) {
-                        if(bank_account[request.value.header.account_id].account_id == request.value.header.account_id) {
-                                if(request.value.header.account_id != request.value.create.account_id) {
-                                        if(request.value.create.balance <= MAX_BALANCE) {
-                                                bank_account[request.value.create.account_id].account_id = request.value.create.account_id;
+        if(request->value.header.account_id == 0) {
+                if(bank_account[request->value.create.account_id].account.account_id != request->value.create.account_id) {
+                        if(bank_account[request->value.header.account_id].account.account_id == request->value.header.account_id) {
+                                if(request->value.header.account_id != request->value.create.account_id) {
+                                        if(request->value.create.balance <= MAX_BALANCE) {
+                                                bank_account[request->value.create.account_id].account.account_id = request->value.create.account_id;
 
-                                                generateBankCredentials(request.value.create.account_id);
+                                                generateBankCredentials(request->value.create.account_id);
 
-                                                bank_account[request.value.create.account_id].balance = request.value.create.balance;
+                                                bank_account[request->value.create.account_id].account.balance = request->value.create.balance;
 
                                                 //auxiliar code
                                                 printf("\n[CREATE]\n");
                                                 //------------
-                                                if(logAccountCreation(STDOUT_FILENO, currentThreadPID(), &bank_account[request.value.create.account_id]) < 0) {
+                                                if(logAccountCreation(STDOUT_FILENO, currentThreadPID(), &bank_account[request->value.create.account_id].account) < 0) {
                                                         perror("Creation of Account failed!");
                                                         exit(1);
                                                 } else {reply.value.header.ret_code = 0;}
@@ -179,22 +179,24 @@ void createAccount(tlv_request_t request){
                 perror("user logRequest() falied!");
                 exit(1);
         }
+
+        return reply;
 }
 
 /**
  * Executes the operaton Balance.
  * Generates the reply accordingly.
 **/
-void getBalance(tlv_request_t request){
+tlv_reply_t getBalance(tlv_request_t *request){
         tlv_reply_t reply;
 
-        reply.type = request.type;
-        reply.value.header.account_id = request.value.header.account_id;
+        reply.type = request->type;
+        reply.value.header.account_id = request->value.header.account_id;
 
-        if(request.value.header.account_id != 0) {
-                if(bank_account[request.value.header.account_id].account_id == request.value.header.account_id) {
+        if(request->value.header.account_id != 0) {
+                if(bank_account[request->value.header.account_id].account.account_id == request->value.header.account_id) {
                         reply.value.header.ret_code = 0;
-                        reply.value.balance.balance = bank_account[request.value.header.account_id].balance;
+                        reply.value.balance.balance = bank_account[request->value.header.account_id].account.balance;
                 } else {reply.value.header.ret_code = 7;}
         } else {reply.value.header.ret_code = 5;}
 
@@ -205,30 +207,32 @@ void getBalance(tlv_request_t request){
                 perror("user logRequest() falied!");
                 exit(1);
         }
+
+        return reply;
 }
 
 /**
  * Executes the operaton tranfer.
  * Generates the reply accordingly.
 **/
-void opTransfer(tlv_request_t request){
+tlv_reply_t opTransfer(tlv_request_t *request){
         tlv_reply_t reply;
 
-        reply.type = request.type;
-        reply.value.header.account_id = request.value.header.account_id;
+        reply.type = request->type;
+        reply.value.header.account_id = request->value.header.account_id;
 
-        if(request.value.header.account_id != 0) {
-                if(request.value.transfer.account_id > 0){
-                        if(bank_account[request.value.header.account_id].account_id == request.value.header.account_id) {
-                                if(bank_account[request.value.transfer.account_id].account_id == request.value.transfer.account_id) {
-                                        if(request.value.header.account_id != request.value.transfer.account_id) {
-                                                if(bank_account[request.value.header.account_id].balance >= request.value.transfer.amount) {
-                                                        if(request.value.transfer.amount <= MAX_BALANCE) {
+        if(request->value.header.account_id != 0) {
+                if(request->value.transfer.account_id > 0){
+                        if(bank_account[request->value.header.account_id].account.account_id == request->value.header.account_id) {
+                                if(bank_account[request->value.transfer.account_id].account.account_id == request->value.transfer.account_id) {
+                                        if(request->value.header.account_id != request->value.transfer.account_id) {
+                                                if(bank_account[request->value.header.account_id].account.balance >= request->value.transfer.amount) {
+                                                        if(request->value.transfer.amount <= MAX_BALANCE) {
 
-                                                                bank_account[request.value.header.account_id].balance-=request.value.transfer.amount;
-                                                                bank_account[request.value.transfer.account_id].balance+=request.value.transfer.amount;
+                                                                bank_account[request->value.header.account_id].account.balance-=request->value.transfer.amount;
+                                                                bank_account[request->value.transfer.account_id].account.balance+=request->value.transfer.amount;
                                                                 reply.value.header.ret_code = 0;
-                                                                reply.value.transfer.balance = request.value.transfer.amount;
+                                                                reply.value.transfer.balance = request->value.transfer.amount;
 
                                                         } else {reply.value.header.ret_code = 10;}
                                                 } else {reply.value.header.ret_code = 9;}
@@ -245,6 +249,8 @@ void opTransfer(tlv_request_t request){
                 perror("user logRequest() falied!");
                 exit(1);
         }
+
+        return reply;
 }
 
 /**
@@ -252,12 +258,12 @@ void opTransfer(tlv_request_t request){
  * Generates the reply.
  * Changes the permition of the server FIFO to "read only"
 **/
-void Shutdown(tlv_request_t request){
+tlv_reply_t Shutdown(tlv_request_t *request){
         tlv_reply_t reply;
-        reply.type = request.type;
-        reply.value.header.account_id = request.value.header.account_id;
+        reply.type = request->type;
+        reply.value.header.account_id = request->value.header.account_id;
 
-        if(request.value.header.account_id == 0) {
+        if(request->value.header.account_id == 0) {
                 reply.value.shutdown.active_offices = host.tnum--;
         }else {reply.value.header.ret_code = 5;}
 
@@ -274,32 +280,67 @@ void Shutdown(tlv_request_t request){
                 perror("user logRequest() falied!");
                 exit(1);
         }
+
+        return reply;
+}
+
+/**
+ * 
+**/
+void sendReply(tlv_reply_t *reply, int usr_pid){
+        int usr_fifo_id;
+        char fifoname[20];
+
+        //generates the FIFO path
+        sprintf(fifoname, "%s%d", USER_FIFO_PATH_PREFIX, usr_pid);
+
+        //opens the user FIFO to WRITE_ONLY
+        if((usr_fifo_id = open(fifoname, O_WRONLY)) == -1){
+                perror("Open user FIFO failed!");
+                exit(1);
+        }
+
+        //send reply
+        if(write(usr_fifo_id, &reply, sizeof(reply)) == -1) {
+                perror("Write reply to user failed!");
+                exit(1);
+        }
+
+
+        close(usr_fifo_id);
 }
 
 /**
  * Manages the operations based on the request given.
+ * Before the execution of the operation, tries to lock the account mutex.
+ * This insures that each account runs one operation at a time.
  **/
 bool operationManagment(tlv_request_t request){
+
+        tlv_reply_t reply;
 
         //auxiliar code
         printf("\n[REPLY]\n");
         //------------
 
+        //lock bank account mutex
+        pthread_mutex_lock (&bank_account[request.value.header.account_id].account_mutex);
+
         switch(request.type) {
         case OP_CREATE_ACCOUNT:
-                createAccount(request);
+                reply = createAccount(&request);
                 break;
 
         case OP_BALANCE:
-                getBalance(request);
+                reply = getBalance(&request);
                 break;
 
         case OP_TRANSFER:
-                opTransfer(request);
+                reply = opTransfer(&request);
                 break;
 
         case OP_SHUTDOWN:
-                Shutdown(request);
+                reply = Shutdown(&request);
                 return true;
                 break;
 
@@ -309,6 +350,12 @@ bool operationManagment(tlv_request_t request){
         default:
                 break;
         }
+
+        //send reply to user
+        sendReply(&reply, request.value.header.pid);
+
+        //unclock bank account mutex
+        pthread_mutex_unlock (&bank_account[request.value.header.account_id].account_mutex);
 
         return false;
 }

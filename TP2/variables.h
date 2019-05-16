@@ -28,6 +28,13 @@ struct server
         char password[MAX_PASSWORD_LEN+1];
 };
 
+struct bankAccounts
+{
+    bank_account_t account;
+    pthread_mutex_t account_mutex;
+};
+
+
 /**
  * Server data.
  **/
@@ -39,11 +46,11 @@ extern struct requests queue;
 //Admin password
 extern struct server host;
 
+//bank accounts struct array
+extern struct bankAccounts bank_account[MAX_BANK_ACCOUNTS];
+
 //pointer for the dynamic pthread_t array  
 extern pthread_t * bank_office;
-
-//bank accounts struct array
-extern bank_account_t bank_account[MAX_BANK_ACCOUNTS];
 
 //server fifo identifier
 extern int srv_fifo_id;

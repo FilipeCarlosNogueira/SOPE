@@ -11,10 +11,12 @@
 tlv_request_t client;
 tlv_reply_t reply;
 
-char fifoname[16];
+char fifoname[20];
+int usr_fifo_id;
 
 /**
- *
+ * Parses all the shell arguments to their respective variables.
+ * Verifies if the theres's a valid arguments number.
  **/
 bool parsingCredentials(int argc, char const *argv[]){
         if(argc != 6) {
@@ -58,6 +60,11 @@ bool parsingCredentials(int argc, char const *argv[]){
         {
         case 0: //Create acount
 
+                if(strlen(argv[5]) == 0){
+                        printf("Missing Arguments\n");
+                        return false;
+                }
+
                 //Type
                 client.type = 0;
 
@@ -90,6 +97,11 @@ bool parsingCredentials(int argc, char const *argv[]){
                 break;
 
         case 2: //Transfer
+
+                if(strlen(argv[5]) == 0){
+                        perror("Missing Arguments");
+                        return false;
+                }
 
                 //Type
                 client.type = 2;
@@ -127,49 +139,52 @@ bool parsingCredentials(int argc, char const *argv[]){
 }
 
 /**
- * Creating and opening the user FIFO (tmp/secure_XXXXX, XXXXX=PID).
- * Reading and logging the server reply.
+ * Creating and opening the user FIFO (tmp/secure_XXXXX, XXXXX=PID) in write only.
  **/
-void receiveFIFO(){
-        int pid = getpid();
-        char mypid[5];  //ex: 12345
-        sprintf(mypid, "%d", pid);
+void userFIFOcreate(){
 
-        int fd,n;
+        //generate the user FIFO's name
+        sprintf(fifoname, "%s%d", USER_FIFO_PATH_PREFIX, getpid());
 
-        strcpy(fifoname,USER_FIFO_PATH_PREFIX);
-        strcpy(fifoname,mypid);
-
-
-        //open
-        if((fd = open(fifoname, O_RDONLY)) == -1) {
-                perror("Open user FIFO failed!");
+        //creating the server FIFO
+        if( mkfifo(fifoname, 0666) == -1) {
+                perror("server FIFO failed!");
                 exit(1);
         }
+
+        //openning the usr FIFO in READ_ONLY
+        if((usr_fifo_id = open(fifoname, O_RDONLY)) == -1) {
+                perror("Open server FIFO failed!");
+                exit(1);
+        } 
+}
+
+/**
+ * Reading the server reply.
+ **/
+void getReply(){
+        int n;
 
         //read
         do {
-                n = read(fd, &reply, sizeof(reply));
+                n = read(usr_fifo_id, &reply, sizeof(tlv_reply_t));
 
         } while (n<=0);
-
-        //log reply
-        if(logReply(STDOUT_FILENO, pid, &reply) < 0) {
-                perror("user logReply() failed!");
-                exit(1);
-        }
 }
-
 
 /**
- * Closes the user FIFO.
+ * Destroing the user FIFO
  **/
 void userFIFOclose(){
+
+        close(usr_fifo_id);
+
         if(unlink(fifoname) == -1) {
-                perror("unlink user FIFO failed!");
+                perror("unlink server FIFO failed!");
                 exit(1);
         }
 }
+
 
 /**
  * Main funtion.
@@ -196,16 +211,21 @@ int main(int argc, char const *argv[]){
                 exit(1);
         }
 
-        //create,open,read and log user FIFO,
-        //receiveFIFO();
+        //create user FIFO
+        userFIFOcreate();
 
+        //get server's reply
+        getReply();
+
+        //close user FIFO
+        userFIFOclose();
+
+        //log reply
+        printf("reply id: %d\n", reply.value.header.account_id);
         if(logReply(STDOUT_FILENO, getpid(), &reply) < 0) {
-                perror("user logRequest() failed!");
+                perror("user logReply() failed!");
                 exit(1);
         }
-
-        //close fifo
-        //userFIFOclose();
 
         return 0;
 }

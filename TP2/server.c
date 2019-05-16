@@ -24,7 +24,7 @@ struct requests queue;
 struct server host;
 
 pthread_t * bank_office;
-bank_account_t bank_account[MAX_BANK_ACCOUNTS];
+struct bankAccounts bank_account[MAX_BANK_ACCOUNTS];
 
 int srv_fifo_id;
 
@@ -67,6 +67,8 @@ bool parsingArguments(int argc, char const *argv[]){
                 printf("server password: %s\n", host.password); //auxiliar funtion TO BE DELETED
         }
 
+
+
         return true;
 }
 
@@ -96,6 +98,7 @@ void serverFIFOopen(){
  * Thread funtion.
  * Extracts the lastest request and validates the operation.
  * Only one thread at a time can access the requests queue.
+ * Writes the reply of the user fifo.
  **/
 void * bankOffice(){
 
@@ -185,20 +188,20 @@ bool requestAuthentication(tlv_request_t * request){
         int flag = 0;
 
         //If account was not yet created
-        if(bank_account[request->value.header.account_id].account_id != request->value.header.account_id){
+        if(bank_account[request->value.header.account_id].account.account_id != request->value.header.account_id){
                 flag = 1;
         }
         //hash of bank account was not define
-        if(strlen(bank_account[request->value.header.account_id].hash) == 0){
+        if(strlen(bank_account[request->value.header.account_id].account.hash) == 0){
                 flag = 1;
         }
         //salt of bank account was not define
-        if(strlen(bank_account[request->value.header.account_id].salt) == 0){
+        if(strlen(bank_account[request->value.header.account_id].account.salt) == 0){
                 flag = 1;
         }
 
-        //Validate account login Credentials
-        if(!validateCredentials(request->value.header.password, &bank_account[request->value.header.account_id])){
+        Validate account login Credentials
+        if(!validateCredentials(request->value.header.password, &bank_account[request->value.header.account_id].account)){
                 flag = 2;
         }
 
@@ -217,10 +220,12 @@ bool requestAuthentication(tlv_request_t * request){
                 reply.length = sizeof(reply);
 
                 //logging reply
+                printf("3\n");
                 if(logReply(STDOUT_FILENO, getpid(), &reply) < 0) {
                         perror("user logRequest() falied!");
                         exit(1);
                 }
+                printf("3\n");
 
                 return false;
         }
@@ -287,19 +292,24 @@ void serverFIFOclose(){
  * Main funtion.
  **/
 int main(int argc, char const *argv[]){
-
-        time_t t;
-        /* Intializes random number generator */
-        srand((unsigned) time(&t));
-
-        //inicializes the semafore.
-        semafore_init();
         
         //parses the data provided by the arguments of the shell
         if(!parsingArguments(argc, argv))
                 return -1;
 
         adminAcount();
+
+        time_t t;
+        /* Intializes random number generator */
+        srand((unsigned) time(&t));
+
+        //inicializes the semafore
+        semafore_init();
+
+        //inicializes all the accounts mutexs
+        for(int i = 0; i < MAX_BANK_ACCOUNTS; i++){
+                pthread_mutex_init (&bank_account[i].account_mutex, NULL);
+        }
 
         serverFIFOopen();
 
