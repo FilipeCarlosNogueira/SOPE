@@ -170,13 +170,12 @@ void userFIFOcreate(){
 void sendRequest(){
 
         //open server fifo
-        if((srv_fifo_id = open(SERVER_FIFO_PATH, O_WRONLY)) == 1) {
+        if((srv_fifo_id = open(SERVER_FIFO_PATH, O_WRONLY)) < 0) {
                 reply.value.header.ret_code = 1;
                 if(logReply(STDOUT_FILENO, getpid(), &reply) < 0) {
                         perror("user logReply() failed!");
                         exit(1);
                 }
-
                 if(logReply(usr_log, getpid(), &reply) < 0) {
                         perror("user logReply() failed!");
                         exit(1);
@@ -187,6 +186,7 @@ void sendRequest(){
         //send request
         if(write(srv_fifo_id, &client, sizeof(client)) == -1) {
                 perror("write() request failed!");
+                exit(1);
         }
 
         //--- auxiliar code ---

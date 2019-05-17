@@ -286,13 +286,13 @@ void sendReply(tlv_reply_t reply, int usr_pid, int thread_pid){
                 reply.value.header.ret_code = 3;
 
                 if(logReply(STDOUT_FILENO, thread_pid, &reply) < 0) {
-                        perror("user logReply() falied!");
-                }
-                if(logReply(srv_log, thread_pid, &reply) < 0) {
-                        perror("user logReply() falied!");
+                        perror("user logReply() failed!");
                         exit(1);
                 }
-                exit(1);
+                if(logReply(srv_log, thread_pid, &reply) < 0) {
+                        perror("user logReply() failed!");
+                        exit(1);
+                }
         }
 
         //send reply
@@ -365,6 +365,7 @@ void operationManagment(tlv_request_t request){
                 //shutdown delay
                 logDelay(STDOUT_FILENO, request.value.header.pid, request.value.header.op_delay_ms);
                 logDelay(srv_log, request.value.header.pid, request.value.header.op_delay_ms);
+                usleep(request.value.header.op_delay_ms);
 
                 pthread_mutex_lock(&server_shutdown_mutex);
                 server_shutdown = true;
