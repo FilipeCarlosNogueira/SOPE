@@ -338,14 +338,6 @@ void operationManagment(tlv_request_t request){
         //lock bank account mutex
         pthread_mutex_lock (&bank_account[request.value.header.account_id].account_mutex);
 
-        //if the operation to shutdown the server hasn't been requested
-        if(!server_shutdown) {
-                pthread_mutex_lock(&server_shutdown_mutex);
-                server_shutdown = false;
-                printf("not shutdown\n");
-                pthread_mutex_unlock(&server_shutdown_mutex);
-        }
-
         switch(request.type) {
         case OP_CREATE_ACCOUNT:
                 reply = createAccount(&request);
@@ -356,7 +348,14 @@ void operationManagment(tlv_request_t request){
                 break;
 
         case OP_TRANSFER:
+                //lock destination bank account mutex
+                pthread_mutex_lock (&bank_account[request.value.transfer.account_id].account_mutex);
+
                 reply = opTransfer(&request);
+
+                //unclock destination bank account mutex
+                pthread_mutex_unlock (&bank_account[request.value.transfer.account_id].account_mutex);
+
                 break;
 
         case OP_SHUTDOWN:

@@ -252,7 +252,6 @@ void userFIFOclose(){
         }
 }
 
-
 /**
  * Main funtion.
  **/

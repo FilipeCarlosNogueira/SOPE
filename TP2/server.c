@@ -32,7 +32,7 @@ bool server_shutdown = false;
 pthread_mutex_t server_shutdown_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /**
- * parses the data provided by the arguments of the shell.
+ * Parses the data provided by the arguments of the shell.
  **/
 bool parsingArguments(int argc, char const *argv[]){
         if(argc != 3) {
@@ -112,16 +112,17 @@ void * bankOffice(){
          *      all pendant requests were processed.
          **/
         while(!(server_shutdown && isEmpty())) {
-
-                printf("**thread going\n");
+                printf("ola\n");
 
                 //locks the semaphore
                 semafore_wait();
 
-                printf("**sem lock\n");
+                printf("adeus\n");
 
                 //Infinit loop. The trhead is always looking for a request.
-                while (1) {
+                while (!(server_shutdown && isEmpty())) {
+
+                        //printf("still going\n");
 
                         //when there's a request in the queue, the request is removed.
                         if (!isEmpty()) {
@@ -132,11 +133,11 @@ void * bankOffice(){
                                 //delay
                                 logSyncDelay(STDOUT_FILENO,currentThreadPID(), request.value.header.pid, request.value.header.op_delay_ms);
                                 logSyncDelay(srv_log,currentThreadPID(), request.value.header.pid, request.value.header.op_delay_ms);
-                                usleep(request.value.header.op_delay_ms);
+                                usleep(request.value.header.op_delay_ms * 1000);
 
                                 operationManagment(request);
 
-                                //break;
+                                break;
                         }
                 }
         }
