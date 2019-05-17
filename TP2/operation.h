@@ -214,6 +214,12 @@ tlv_reply_t getBalance(tlv_request_t const request){
  * Generates the reply accordingly.
  **/
 tlv_reply_t opTransfer(tlv_request_t const request){
+
+        //delay
+        logSyncDelay(STDOUT_FILENO,currentThreadPID(), request.value.header.pid, request.value.header.op_delay_ms);
+        logSyncDelay(srv_log,currentThreadPID(), request.value.header.pid, request.value.header.op_delay_ms);
+        usleep(request.value.header.op_delay_ms * 1000);
+
         tlv_reply_t reply;
 
         reply.type = request.type;
@@ -251,10 +257,6 @@ tlv_reply_t opTransfer(tlv_request_t const request){
  * Changes the permition of the server FIFO to "read only"
  **/
 tlv_reply_t Shutdown(tlv_request_t const request){
-        //shutdown delay
-        logDelay(STDOUT_FILENO, request.value.header.pid, request.value.header.op_delay_ms);
-        logDelay(srv_log, request.value.header.pid, request.value.header.op_delay_ms);
-        usleep(request.value.header.op_delay_ms);
 
         tlv_reply_t reply;
         reply.type = request.type;
@@ -265,6 +267,11 @@ tlv_reply_t Shutdown(tlv_request_t const request){
         }else {reply.value.header.ret_code = 5;}
 
         reply.length = sizeof(reply);
+
+        //shutdown delay
+        logDelay(STDOUT_FILENO, request.value.header.pid, request.value.header.op_delay_ms);
+        logDelay(srv_log, request.value.header.pid, request.value.header.op_delay_ms);
+        usleep(request.value.header.op_delay_ms);
 
         //FIFO permitions changed to "read only"
         if(fchmod(srv_fifo_id, 0444) == -1) {
@@ -348,9 +355,11 @@ void operationManagment(tlv_request_t request){
         pthread_mutex_lock (&bank_account[request.value.header.account_id].account_mutex);
 
         //delay
-        logSyncDelay(STDOUT_FILENO,currentThreadPID(), request.value.header.pid, request.value.header.op_delay_ms);
-        logSyncDelay(srv_log,currentThreadPID(), request.value.header.pid, request.value.header.op_delay_ms);
-        usleep(request.value.header.op_delay_ms * 1000);
+        if(request.type != OP_SHUTDOWN){
+                logSyncDelay(STDOUT_FILENO,currentThreadPID(), request.value.header.pid, request.value.header.op_delay_ms);
+                logSyncDelay(srv_log,currentThreadPID(), request.value.header.pid, request.value.header.op_delay_ms);
+                usleep(request.value.header.op_delay_ms * 1000);
+        }
 
         switch(request.type) {
         case OP_CREATE_ACCOUNT:

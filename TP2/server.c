@@ -57,7 +57,6 @@ bool parsingArguments(int argc, char const *argv[]){
                         exit(1);
                 }
         }
-        printf("bank_offices: %d\n",host.tnum); //auxiliar funtion TO BE DELETED
 
         //saving the server password
         if(strlen(argv[2]) < MIN_PASSWORD_LEN || strlen(argv[2]) > MAX_PASSWORD_LEN) {
@@ -66,7 +65,6 @@ bool parsingArguments(int argc, char const *argv[]){
         }
         else{
                 strcpy(host.password, argv[2]);
-                printf("server password: %s\n", host.password); //auxiliar funtion TO BE DELETED
         }
 
 
