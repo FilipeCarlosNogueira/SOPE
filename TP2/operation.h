@@ -19,14 +19,12 @@ char *hash(char * str){
         char path[1035];
         char command[500];
 
-        #ifdef __APPLE__
+
         strcpy(command, "echo -n ");
         strcat(command, str);
         strcat(command, " | shasum -a 256 ");
-        #else
-        strcpy(command, "sha256sum ");
-        #endif
-        
+
+
 
         /* Open the command for reading. */
         fp = popen(command, "r");
@@ -58,7 +56,7 @@ char *hash(char * str){
 
 /**
  * Generates a random salt.
-**/
+ **/
 void saltGenerator(char* salt){
 
         strcpy(salt, "");
@@ -67,7 +65,7 @@ void saltGenerator(char* salt){
         char ch[2];
         char aux[] = "abcdefghijklmnopqrstuvwxyz1234567890";
 
-        for(int i = 0; i < SALT_LEN; i++){
+        for(int i = 0; i < SALT_LEN; i++) {
                 random = (rand() % strlen(aux));
                 sprintf(ch, "%c", aux[random]);
                 strcat(salt, ch);
@@ -80,7 +78,7 @@ void saltGenerator(char* salt){
  *      creation of the salt;
  *      computation of the hash;
  * Attributes the calculated salt and hash to the bank_office[current_ID].
-**/ 
+ **/
 void generateBankCredentials(int bank_account_id){
         char pass_salt[MAX_PASSWORD_LEN+SALT_LEN];
 
@@ -96,7 +94,7 @@ void generateBankCredentials(int bank_account_id){
 
 /**
  * Identifies the TPID of the current thread.
-**/ 
+ **/
 int currentThreadPID(){
         int arg;
 
@@ -125,7 +123,7 @@ void adminAcount(){
         bank_account[0].account.balance = 0;
 
         //log creation of admin
-        if(logAccountCreation(STDOUT_FILENO, 0, &bank_account[0].account) < 0){
+        if(logAccountCreation(STDOUT_FILENO, 0, &bank_account[0].account) < 0) {
                 perror("Creation of Admin Acount failed!");
                 exit(1);
         }
@@ -135,12 +133,12 @@ void adminAcount(){
  * //-----------//-----------//-----------//-----------//-----------
  * -------------------- [OPERATION FUNTIONS] -----------------------
  * //-----------//-----------//-----------//-----------//-----------
-**/
+ **/
 
 /**
  * Executes the operaton Create.
  * Generates the reply accordingly.
-**/
+ **/
 tlv_reply_t createAccount(tlv_request_t *request){
         tlv_reply_t reply;
 
@@ -180,7 +178,7 @@ tlv_reply_t createAccount(tlv_request_t *request){
 /**
  * Executes the operaton Balance.
  * Generates the reply accordingly.
-**/
+ **/
 tlv_reply_t getBalance(tlv_request_t *request){
         tlv_reply_t reply;
 
@@ -202,7 +200,7 @@ tlv_reply_t getBalance(tlv_request_t *request){
 /**
  * Executes the operaton tranfer.
  * Generates the reply accordingly.
-**/
+ **/
 tlv_reply_t opTransfer(tlv_request_t *request){
         tlv_reply_t reply;
 
@@ -210,7 +208,7 @@ tlv_reply_t opTransfer(tlv_request_t *request){
         reply.value.header.account_id = request->value.header.account_id;
 
         if(request->value.header.account_id != 0) {
-                if(request->value.transfer.account_id > 0){
+                if(request->value.transfer.account_id > 0) {
                         if(bank_account[request->value.header.account_id].account.account_id == request->value.header.account_id) {
                                 if(bank_account[request->value.transfer.account_id].account.account_id == request->value.transfer.account_id) {
                                         if(request->value.header.account_id != request->value.transfer.account_id) {
@@ -239,7 +237,7 @@ tlv_reply_t opTransfer(tlv_request_t *request){
  * Executes operation Shut Down.
  * Generates the reply.
  * Changes the permition of the server FIFO to "read only"
-**/
+ **/
 tlv_reply_t Shutdown(tlv_request_t *request){
         tlv_reply_t reply;
         reply.type = request->type;
@@ -252,7 +250,7 @@ tlv_reply_t Shutdown(tlv_request_t *request){
         reply.length = sizeof(reply);
 
         //FIFO permitions changed to "read only"
-        if(fchmod(srv_fifo_id, 0444) == -1){
+        if(fchmod(srv_fifo_id, 0444) == -1) {
                 perror("fchmod() failed!");
                 exit(1);
         }
@@ -263,7 +261,7 @@ tlv_reply_t Shutdown(tlv_request_t *request){
 /**
  * Sends the reply to the proper user.
  * Loggs the reply made.
-**/
+ **/
 void sendReply(tlv_reply_t reply, int usr_pid, int thread_pid){
         int usr_fifo_id;
         char *fifoname = malloc(sizeof(char) * USER_FIFO_PATH_LEN);
@@ -272,7 +270,7 @@ void sendReply(tlv_reply_t reply, int usr_pid, int thread_pid){
         sprintf(fifoname, "%s%d", USER_FIFO_PATH_PREFIX, usr_pid);
 
         //opens the user FIFO to WRITE_ONLY
-        if((usr_fifo_id = open(fifoname, O_WRONLY)) == -1){
+        if((usr_fifo_id = open(fifoname, O_WRONLY)) == -1) {
                 perror("Open user FIFO failed!");
                 exit(1);
         }
@@ -315,7 +313,7 @@ void operationManagment(tlv_request_t request){
         pthread_mutex_lock (&bank_account[request.value.header.account_id].account_mutex);
 
         //if the operation to shutdown the server hasn't been requested
-        if(!server_shutdown){
+        if(!server_shutdown) {
                 pthread_mutex_lock(&server_shutdown_mutex);
                 server_shutdown = false;
                 printf("not suhtdown\n");
@@ -323,32 +321,32 @@ void operationManagment(tlv_request_t request){
         }
 
         switch(request.type) {
-                case OP_CREATE_ACCOUNT:
-                        reply = createAccount(&request);
-                        break;
+        case OP_CREATE_ACCOUNT:
+                reply = createAccount(&request);
+                break;
 
-                case OP_BALANCE:
-                        reply = getBalance(&request);
-                        break;
+        case OP_BALANCE:
+                reply = getBalance(&request);
+                break;
 
-                case OP_TRANSFER:
-                        reply = opTransfer(&request);
-                        break;
+        case OP_TRANSFER:
+                reply = opTransfer(&request);
+                break;
 
-                case OP_SHUTDOWN:
-                        reply = Shutdown(&request);
-                        pthread_mutex_lock(&server_shutdown_mutex);
-                        server_shutdown = true;
-                        pthread_mutex_unlock(&server_shutdown_mutex);
-                        break;
+        case OP_SHUTDOWN:
+                reply = Shutdown(&request);
+                pthread_mutex_lock(&server_shutdown_mutex);
+                server_shutdown = true;
+                pthread_mutex_unlock(&server_shutdown_mutex);
+                break;
 
-                case __OP_MAX_NUMBER:
-                        reply.type = __OP_MAX_NUMBER;
-                        reply.length = sizeof(reply);
-                        break;
+        case __OP_MAX_NUMBER:
+                reply.type = __OP_MAX_NUMBER;
+                reply.length = sizeof(reply);
+                break;
 
-                default:
-                        break;
+        default:
+                break;
         }
 
         //send reply to user
