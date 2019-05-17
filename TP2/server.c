@@ -268,12 +268,16 @@ void readRequests(){
 void closeBankOffices(){
         for (int i = 0; i < host.tnum; i++) {
                 //closes bank office
+                pthread_cancel(bank_office[i]);
                 pthread_join(bank_office[i], NULL);
 
                 //log closure
                 logBankOfficeClose(STDOUT_FILENO, i+1, bank_office[i]);
                 logBankOfficeClose(srv_log, i+1, bank_office[i]);
         }
+        free(bank_office);
+
+        pthread_mutex_destroy(&server_shutdown_mutex);
 }
 
 /**
@@ -318,15 +322,15 @@ int main(int argc, char const *argv[]){
                 pthread_mutex_init (&bank_account[i].account_mutex, NULL);
         }
 
-        serverFIFOopen();
-
         openBankOffices();
+
+        serverFIFOopen();
 
         readRequests();
 
-        closeBankOffices();
-
         serverFIFOclose();
+
+        closeBankOffices();
 
         //close ulog.txt
         close(srv_log);

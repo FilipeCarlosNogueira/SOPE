@@ -12,7 +12,7 @@
 
 /**
  * @brief Log request message into file.
- * 
+ *
  * @param fd The file descriptor.
  * @param id The id to be printed: PID for users, bank office/main thread ID for server.
  * @param request The request message.
@@ -22,7 +22,7 @@ int logRequest(int fd, int id, const tlv_request_t *request);
 
 /**
  * @brief Log reply message into file.
- * 
+ *
  * @param fd The file descriptor.
  * @param id The id to be printed: PID for users, bank office/main thread ID for server.
  * @param reply The reply message.
@@ -32,7 +32,7 @@ int logReply(int fd, int id, const tlv_reply_t *request);
 
 /**
  * @brief Log a bank office opening.
- * 
+ *
  * @param fd The file descriptor.
  * @param id The bank office/main thread ID.
  * @param tid The thread ID as defined by POSIX.
@@ -42,7 +42,7 @@ int logBankOfficeOpen(int fd, int id, pthread_t tid);
 
 /**
  * @brief Log a bank office closing.
- * 
+ *
  * @param fd The file descriptor.
  * @param id The bank office/main thread ID.
  * @param tid The thread ID as defined by POSIX.
@@ -52,7 +52,7 @@ int logBankOfficeClose(int fd, int id, pthread_t tid);
 
 /**
  * @brief Log account creation (additional information).
- * 
+ *
  * @param fd The file descriptor.
  * @param id The bank office/main thread ID.
  * @param account The account information.
@@ -62,7 +62,7 @@ int logAccountCreation(int fd, int id, const bank_account_t *account);
 
 /**
  * @brief Log the usage of a synchronization mechanism function (other than semaphores).
- * 
+ *
  * @param fd The file descriptor.
  * @param id The bank office/main thread ID.
  * @param smo The function being used.
@@ -74,7 +74,7 @@ int logSyncMech(int fd, int id, sync_mech_op_t smo, sync_role_t role, int sid);
 
 /**
  * @brief Log the usage of a semaphore's synchronization mechanism function.
- * 
+ *
  * @param fd The file descriptor.
  * @param id The bank office/main thread ID.
  * @param smo The function being used.
@@ -87,7 +87,7 @@ int logSyncMechSem(int fd, int id, sync_mech_op_t smo, sync_role_t role, int sid
 
 /**
  * @brief Log the delay introduced (server shutdown only).
- * 
+ *
  * @param fd The file descriptor.
  * @param id The bank office/main thread ID.
  * @param delay_ms The delay in milliseconds.
@@ -97,7 +97,7 @@ int logDelay(int fd, int id, uint32_t delay_ms);
 
 /**
  * @brief Log the delay introduced immediately after entering the critical section of an account.
- * 
+ *
  * @param fd The file descriptor.
  * @param id The bank office/main thread ID.
  * @param sid The account ID.
