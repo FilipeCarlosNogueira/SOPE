@@ -310,12 +310,12 @@ void sendReply(tlv_reply_t reply, int usr_pid, int thread_pid){
 
         //logging reply
         if(logReply(STDOUT_FILENO, thread_pid, &reply) < 0) {
-                perror("user logReply() falied!");
+                perror("user logReply() failed!");
                 exit(1);
         }
 
         if(logReply(srv_log, thread_pid, &reply) < 0) {
-                perror("user logReply() falied!");
+                perror("user logReply() failed!");
                 exit(1);
         }
 }
@@ -342,7 +342,7 @@ void operationManagment(tlv_request_t request){
         if(!server_shutdown) {
                 pthread_mutex_lock(&server_shutdown_mutex);
                 server_shutdown = false;
-                printf("not suhtdown\n");
+                printf("not shutdown\n");
                 pthread_mutex_unlock(&server_shutdown_mutex);
         }
 
@@ -361,6 +361,11 @@ void operationManagment(tlv_request_t request){
 
         case OP_SHUTDOWN:
                 reply = Shutdown(&request);
+
+                //shutdown delay
+                logDelay(STDOUT_FILENO, request.value.header.pid, request.value.header.op_delay_ms);
+                logDelay(srv_log, request.value.header.pid, request.value.header.op_delay_ms);
+
                 pthread_mutex_lock(&server_shutdown_mutex);
                 server_shutdown = true;
                 pthread_mutex_unlock(&server_shutdown_mutex);
