@@ -271,7 +271,15 @@ void sendReply(tlv_reply_t reply, int usr_pid, int thread_pid){
 
         //opens the user FIFO to WRITE_ONLY
         if((usr_fifo_id = open(fifoname, O_WRONLY)) == -1) {
-                perror("Open user FIFO failed!");
+                reply.value.header.ret_code = 3;
+
+                if(logReply(STDOUT_FILENO, thread_pid, &reply) < 0) {
+                        perror("user logReply() falied!");
+                }
+                if(logReply(srv_log, thread_pid, &reply) < 0) {
+                        perror("user logReply() falied!");
+                        exit(1);
+                }
                 exit(1);
         }
 
@@ -290,7 +298,12 @@ void sendReply(tlv_reply_t reply, int usr_pid, int thread_pid){
 
         //logging reply
         if(logReply(STDOUT_FILENO, thread_pid, &reply) < 0) {
-                perror("user logRequest() falied!");
+                perror("user logReply() falied!");
+                exit(1);
+        }
+
+        if(logReply(srv_log, thread_pid, &reply) < 0) {
+                perror("user logReply() falied!");
                 exit(1);
         }
 }
@@ -305,6 +318,7 @@ void operationManagment(tlv_request_t request){
         //--- auxiliar code ---
         write(STDOUT_FILENO, "\n[REQUEST]\n", 11);
         logRequest(STDOUT_FILENO, currentThreadPID(), &request);
+        logRequest(srv_log, currentThreadPID(), &request);
         //---------------------
 
         tlv_reply_t reply;

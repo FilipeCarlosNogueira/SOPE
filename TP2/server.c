@@ -28,6 +28,8 @@ struct bankAccounts bank_account[MAX_BANK_ACCOUNTS];
 
 int srv_fifo_id;
 
+int srv_log;
+
 bool server_shutdown = false;
 pthread_mutex_t server_shutdown_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -182,7 +184,7 @@ bool validateCredentials(char * request_pass, bank_account_t * bank_account){
  * Returns true is valid, false otherwise.
  **/
 bool requestAuthentication(tlv_request_t * request){
-        
+
         tlv_reply_t reply;
         int flag = 0;
 
@@ -204,7 +206,7 @@ bool requestAuthentication(tlv_request_t * request){
                 flag = 2;
         }
 
-        //If request was not valid 
+        //If request was not valid
         if(flag == 1 || flag == 2){
                 reply.type = request->type;
                 reply.value.header.account_id = request->value.header.account_id;
@@ -286,12 +288,18 @@ void serverFIFOclose(){
  * Main funtion.
  **/
 int main(int argc, char const *argv[]){
-        
+
         //parses the data provided by the arguments of the shell
         if(!parsingArguments(argc, argv))
                 return -1;
 
         adminAcount();
+
+        //open slog.txt
+        if((srv_log = open(SERVER_LOGFILE, O_WRONLY | O_APPEND | O_CREAT ,0600)) == -1) {
+                perror("open slog.txt failed");
+                exit(1);
+        }
 
         time_t t;
         /* Intializes random number generator */
@@ -314,6 +322,9 @@ int main(int argc, char const *argv[]){
         closeBankOffices();
 
         serverFIFOclose();
+
+        //close ulog.txt
+        close(srv_log);
 
         return 0;
 }
