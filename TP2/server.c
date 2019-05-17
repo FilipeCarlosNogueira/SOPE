@@ -126,7 +126,8 @@ void * bankOffice(){
 
                                 //removing request from the queue.
                                 request = removeRequest();
-
+                                
+                                //executes operation
                                 operationManagment(request);
 
                                 break;

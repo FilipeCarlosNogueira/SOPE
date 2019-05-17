@@ -22,12 +22,9 @@ char *hash(char * str){
         char path[1035];
         char command[500];
 
-
         strcpy(command, "echo -n ");
         strcat(command, str);
         strcat(command, " | shasum -a 256 ");
-
-
 
         /* Open the command for reading. */
         fp = popen(command, "r");
@@ -125,11 +122,14 @@ void adminAcount(){
         //admin account balance
         bank_account[0].account.balance = 0;
 
-        //log creation of admin
+        //--- auxiliar code ---
         if(logAccountCreation(STDOUT_FILENO, 0, &bank_account[0].account) < 0) {
                 perror("Creation of Admin Acount failed!");
                 exit(1);
         }
+        //---------------------
+
+        //log creation of admin
         if(logAccountCreation(srv_log, 0, &bank_account[0].account) < 0) {
                 perror("Creation of Admin Acount failed!");
                 exit(1);
@@ -163,13 +163,14 @@ tlv_reply_t createAccount(tlv_request_t const request){
 
                                                 bank_account[request.value.create.account_id].account.balance = request.value.create.balance;
 
-                                                //auxiliar code
+                                                //--- auxiliar code ---
                                                 printf("\n[CREATE]\n");
-                                                //------------
                                                 if(logAccountCreation(STDOUT_FILENO, currentThreadPID(), &bank_account[request.value.create.account_id].account) < 0) {
                                                         perror("Creation of Account failed!");
                                                         exit(1);
                                                 }
+                                                //---------------------
+
                                                 if(logAccountCreation(srv_log, currentThreadPID(), &bank_account[request.value.create.account_id].account) < 0) {
                                                         perror("Creation of Account failed!");
                                                         exit(1);
@@ -215,10 +216,20 @@ tlv_reply_t getBalance(tlv_request_t const request){
  **/
 tlv_reply_t opTransfer(tlv_request_t const request){
 
-        //delay
+        //--- auxiliar code ---
         logSyncDelay(STDOUT_FILENO,currentThreadPID(), request.value.header.pid, request.value.header.op_delay_ms);
-        logSyncDelay(srv_log,currentThreadPID(), request.value.header.pid, request.value.header.op_delay_ms);
-        usleep(request.value.header.op_delay_ms * 1000);
+        //---------------------
+
+        //delay
+        if(logSyncDelay(srv_log,currentThreadPID(), request.value.header.pid, request.value.header.op_delay_ms) < 0){
+                perror("server logSyncDelay() failed!");
+                exit(1);
+        }
+        //execute delay
+        if(usleep(request.value.header.op_delay_ms * 1000) == -1){
+                perror("usleep() failed!");
+                exit(1);
+        }
 
         tlv_reply_t reply;
 
@@ -268,10 +279,20 @@ tlv_reply_t Shutdown(tlv_request_t const request){
 
         reply.length = sizeof(reply);
 
-        //shutdown delay
+        //--- auxiliar code ---
         logDelay(STDOUT_FILENO, request.value.header.pid, request.value.header.op_delay_ms);
-        logDelay(srv_log, request.value.header.pid, request.value.header.op_delay_ms);
-        usleep(request.value.header.op_delay_ms);
+        //---------------------
+
+        //shutdown delay
+        if(logDelay(srv_log, request.value.header.pid, request.value.header.op_delay_ms) < 0){
+                perror("server logDelay() failed!");
+                exit(1);
+        }
+        //execute delay
+        if(usleep(request.value.header.op_delay_ms * 1000) == -1){
+                perror("usleep() failed!");
+                exit(1);
+        }
 
         //FIFO permitions changed to "read only"
         if(fchmod(srv_fifo_id, 0444) == -1) {
@@ -300,15 +321,6 @@ void sendReply(tlv_reply_t reply, int usr_pid, int thread_pid){
         //opens the user FIFO to WRITE_ONLY
         if((usr_fifo_id = open(fifoname, O_WRONLY)) == -1) {
                 reply.value.header.ret_code = 3;
-
-                if(logReply(STDOUT_FILENO, thread_pid, &reply) < 0) {
-                        perror("user logReply() failed!");
-                        exit(1);
-                }
-                if(logReply(srv_log, thread_pid, &reply) < 0) {
-                        perror("user logReply() failed!");
-                        exit(1);
-                }
         }
 
         //send reply
@@ -317,19 +329,18 @@ void sendReply(tlv_reply_t reply, int usr_pid, int thread_pid){
                 exit(1);
         }
 
-
+        //closes user FIFO
         close(usr_fifo_id);
 
-        //auxiliar code
+        //--- auxiliar code ---
         printf("\n[REPLY]\n");
-        //------------
-
-        //logging reply
         if(logReply(STDOUT_FILENO, thread_pid, &reply) < 0) {
                 perror("user logReply() failed!");
                 exit(1);
         }
+        //---------------------
 
+        //logging reply
         if(logReply(srv_log, thread_pid, &reply) < 0) {
                 perror("user logReply() failed!");
                 exit(1);
@@ -346,8 +357,13 @@ void operationManagment(tlv_request_t request){
         //--- auxiliar code ---
         write(STDOUT_FILENO, "\n[REQUEST]\n", 11);
         logRequest(STDOUT_FILENO, currentThreadPID(), &request);
-        logRequest(srv_log, currentThreadPID(), &request);
         //---------------------
+        
+        //log request
+        if(logRequest(srv_log, currentThreadPID(), &request) < 0){
+                perror("server logRequest() failed!");
+                exit(1);
+        }
 
         tlv_reply_t reply;
 
@@ -356,44 +372,55 @@ void operationManagment(tlv_request_t request){
 
         //delay
         if(request.type != OP_SHUTDOWN){
+                //--- auxiliar code ---
                 logSyncDelay(STDOUT_FILENO,currentThreadPID(), request.value.header.pid, request.value.header.op_delay_ms);
-                logSyncDelay(srv_log,currentThreadPID(), request.value.header.pid, request.value.header.op_delay_ms);
-                usleep(request.value.header.op_delay_ms * 1000);
+                //---------------------
+                
+                //log operation delay
+                if(logSyncDelay(srv_log,currentThreadPID(), request.value.header.pid, request.value.header.op_delay_ms) < 0){
+                        perror("server logSyncDelay() failed!");
+                        exit(1);
+                }
+                //execute delay
+                if(usleep(request.value.header.op_delay_ms * 1000) == -1){
+                        perror("usleep() failed!");
+                        exit(1);
+                }
         }
 
         switch(request.type) {
-        case OP_CREATE_ACCOUNT:
-                reply = createAccount(request);
-                break;
+                case OP_CREATE_ACCOUNT:
+                        reply = createAccount(request);
+                        break;
 
-        case OP_BALANCE:
-                reply = getBalance(request);
-                break;
+                case OP_BALANCE:
+                        reply = getBalance(request);
+                        break;
 
-        case OP_TRANSFER:
-                //lock destination bank account mutex
-                pthread_mutex_lock (&bank_account[request.value.transfer.account_id].account_mutex);
+                case OP_TRANSFER:
+                        //lock destination bank account mutex
+                        pthread_mutex_lock (&bank_account[request.value.transfer.account_id].account_mutex);
 
-                reply = opTransfer(request);
+                        reply = opTransfer(request);
 
-                //unclock destination bank account mutex
-                pthread_mutex_unlock (&bank_account[request.value.transfer.account_id].account_mutex);
+                        //unclock destination bank account mutex
+                        pthread_mutex_unlock (&bank_account[request.value.transfer.account_id].account_mutex);
 
-                break;
+                        break;
 
-        case OP_SHUTDOWN:
+                case OP_SHUTDOWN:
 
-                reply = Shutdown(request);
+                        reply = Shutdown(request);
 
-                break;
+                        break;
 
-        case __OP_MAX_NUMBER:
-                reply.type = __OP_MAX_NUMBER;
-                reply.length = sizeof(reply);
-                break;
+                case __OP_MAX_NUMBER:
+                        reply.type = __OP_MAX_NUMBER;
+                        reply.length = sizeof(reply);
+                        break;
 
-        default:
-                break;
+                default:
+                        break;
         }
 
         //send reply to user
