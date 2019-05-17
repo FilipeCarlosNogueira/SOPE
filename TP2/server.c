@@ -129,13 +129,17 @@ void * bankOffice(){
                                 //removing request from the queue.
                                 request = removeRequest();
 
+                                //delay
+                                logSyncDelay(STDOUT_FILENO,currentThreadPID(), request.value.header.pid, request.value.header.op_delay_ms);
+                                logSyncDelay(srv_log,currentThreadPID(), request.value.header.pid, request.value.header.op_delay_ms);
+                                usleep(request.value.header.op_delay_ms);
+
                                 operationManagment(request);
 
                                 //break;
                         }
                 }
         }
-
         printf("thread fim\n");
 
         return NULL;
@@ -153,12 +157,13 @@ void openBankOffices(){
 
                 //log creation
                 logBankOfficeOpen(STDOUT_FILENO, i+1, bank_office[i]);
+                logBankOfficeOpen(srv_log, i+1, bank_office[i]);
         }
 }
 
 /**
  * Compares if the password given in the request is the same has the bank account.
-**/
+ **/
 bool validateCredentials(char * request_pass, bank_account_t * bank_account){
 
         char pass_salt[MAX_PASSWORD_LEN+SALT_LEN];
@@ -169,7 +174,7 @@ bool validateCredentials(char * request_pass, bank_account_t * bank_account){
 
         strcpy(hash_compare, hash(pass_salt));
 
-        if(strcmp(hash_compare, bank_account->hash) != 0){
+        if(strcmp(hash_compare, bank_account->hash) != 0) {
                 return false;
         }
 
@@ -182,30 +187,30 @@ bool validateCredentials(char * request_pass, bank_account_t * bank_account){
  * Returns true is valid, false otherwise.
  **/
 bool requestAuthentication(tlv_request_t * request){
-        
+
         tlv_reply_t reply;
         int flag = 0;
 
         //If account was not yet created
-        if(bank_account[request->value.header.account_id].account.account_id != request->value.header.account_id){
+        if(bank_account[request->value.header.account_id].account.account_id != request->value.header.account_id) {
                 flag = 1;
         }
         //hash of bank account was not define
-        if(strlen(bank_account[request->value.header.account_id].account.hash) == 0){
+        if(strlen(bank_account[request->value.header.account_id].account.hash) == 0) {
                 flag = 1;
         }
         //salt of bank account was not define
-        if(strlen(bank_account[request->value.header.account_id].account.salt) == 0){
+        if(strlen(bank_account[request->value.header.account_id].account.salt) == 0) {
                 flag = 1;
         }
 
         //Validate account login Credentials
-        if(!validateCredentials(request->value.header.password, &bank_account[request->value.header.account_id].account)){
+        if(!validateCredentials(request->value.header.password, &bank_account[request->value.header.account_id].account)) {
                 flag = 2;
         }
 
-        //If request was not valid 
-        if(flag == 1 || flag == 2){
+        //If request was not valid
+        if(flag == 1 || flag == 2) {
                 reply.type = request->type;
                 reply.value.header.account_id = request->value.header.account_id;
 
@@ -266,6 +271,7 @@ void closeBankOffices(){
 
                 //log closure
                 logBankOfficeClose(STDOUT_FILENO, i+1, bank_office[i]);
+                logBankOfficeClose(srv_log, i+1, bank_office[i]);
         }
 }
 
@@ -286,12 +292,18 @@ void serverFIFOclose(){
  * Main funtion.
  **/
 int main(int argc, char const *argv[]){
-        
+
         //parses the data provided by the arguments of the shell
         if(!parsingArguments(argc, argv))
                 return -1;
 
         adminAcount();
+
+        //open slog.txt
+        if((srv_log = open(SERVER_LOGFILE, O_WRONLY | O_APPEND | O_CREAT,0600)) == -1) {
+                perror("open slog.txt failed");
+                exit(1);
+        }
 
         time_t t;
         /* Intializes random number generator */
@@ -301,7 +313,7 @@ int main(int argc, char const *argv[]){
         semafore_init();
 
         //inicializes all the accounts mutexs
-        for(int i = 0; i < MAX_BANK_ACCOUNTS; i++){
+        for(int i = 0; i < MAX_BANK_ACCOUNTS; i++) {
                 pthread_mutex_init (&bank_account[i].account_mutex, NULL);
         }
 
@@ -314,6 +326,9 @@ int main(int argc, char const *argv[]){
         closeBankOffices();
 
         serverFIFOclose();
+
+        //close ulog.txt
+        close(srv_log);
 
         return 0;
 }
