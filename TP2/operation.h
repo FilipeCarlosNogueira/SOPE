@@ -146,31 +146,31 @@ void adminAcount(){
  * Executes the operaton Create.
  * Generates the reply accordingly.
  **/
-tlv_reply_t createAccount(tlv_request_t *request){
+tlv_reply_t createAccount(tlv_request_t const request){
         tlv_reply_t reply;
 
-        reply.type = request->type;
-        reply.value.header.account_id = request->value.header.account_id;
+        reply.type = request.type;
+        reply.value.header.account_id = request.value.header.account_id;
 
-        if(request->value.header.account_id == 0) {
-                if(bank_account[request->value.create.account_id].account.account_id != request->value.create.account_id) {
-                        if(bank_account[request->value.header.account_id].account.account_id == request->value.header.account_id) {
-                                if(request->value.header.account_id != request->value.create.account_id) {
-                                        if(request->value.create.balance <= MAX_BALANCE) {
-                                                bank_account[request->value.create.account_id].account.account_id = request->value.create.account_id;
+        if(request.value.header.account_id == 0) {
+                if(bank_account[request.value.create.account_id].account.account_id != request.value.create.account_id) {
+                        if(bank_account[request.value.header.account_id].account.account_id == request.value.header.account_id) {
+                                if(request.value.header.account_id != request.value.create.account_id) {
+                                        if(request.value.create.balance <= MAX_BALANCE) {
+                                                bank_account[request.value.create.account_id].account.account_id = request.value.create.account_id;
 
-                                                generateBankCredentials(request->value.create.account_id);
+                                                generateBankCredentials(request.value.create.account_id);
 
-                                                bank_account[request->value.create.account_id].account.balance = request->value.create.balance;
+                                                bank_account[request.value.create.account_id].account.balance = request.value.create.balance;
 
                                                 //auxiliar code
                                                 printf("\n[CREATE]\n");
                                                 //------------
-                                                if(logAccountCreation(STDOUT_FILENO, currentThreadPID(), &bank_account[request->value.create.account_id].account) < 0) {
+                                                if(logAccountCreation(STDOUT_FILENO, currentThreadPID(), &bank_account[request.value.create.account_id].account) < 0) {
                                                         perror("Creation of Account failed!");
                                                         exit(1);
                                                 }
-                                                if(logAccountCreation(srv_log, currentThreadPID(), &bank_account[request->value.create.account_id].account) < 0) {
+                                                if(logAccountCreation(srv_log, currentThreadPID(), &bank_account[request.value.create.account_id].account) < 0) {
                                                         perror("Creation of Account failed!");
                                                         exit(1);
                                                 }
@@ -191,16 +191,16 @@ tlv_reply_t createAccount(tlv_request_t *request){
  * Executes the operaton Balance.
  * Generates the reply accordingly.
  **/
-tlv_reply_t getBalance(tlv_request_t *request){
+tlv_reply_t getBalance(tlv_request_t const request){
         tlv_reply_t reply;
 
-        reply.type = request->type;
-        reply.value.header.account_id = request->value.header.account_id;
+        reply.type = request.type;
+        reply.value.header.account_id = request.value.header.account_id;
 
-        if(request->value.header.account_id != 0) {
-                if(bank_account[request->value.header.account_id].account.account_id == request->value.header.account_id) {
+        if(request.value.header.account_id != 0) {
+                if(bank_account[request.value.header.account_id].account.account_id == request.value.header.account_id) {
                         reply.value.header.ret_code = 0;
-                        reply.value.balance.balance = bank_account[request->value.header.account_id].account.balance;
+                        reply.value.balance.balance = bank_account[request.value.header.account_id].account.balance;
                 } else {reply.value.header.ret_code = 7;}
         } else {reply.value.header.ret_code = 5;}
 
@@ -213,24 +213,24 @@ tlv_reply_t getBalance(tlv_request_t *request){
  * Executes the operaton tranfer.
  * Generates the reply accordingly.
  **/
-tlv_reply_t opTransfer(tlv_request_t *request){
+tlv_reply_t opTransfer(tlv_request_t const request){
         tlv_reply_t reply;
 
-        reply.type = request->type;
-        reply.value.header.account_id = request->value.header.account_id;
+        reply.type = request.type;
+        reply.value.header.account_id = request.value.header.account_id;
 
-        if(request->value.header.account_id != 0) {
-                if(request->value.transfer.account_id > 0) {
-                        if(bank_account[request->value.header.account_id].account.account_id == request->value.header.account_id) {
-                                if(bank_account[request->value.transfer.account_id].account.account_id == request->value.transfer.account_id) {
-                                        if(request->value.header.account_id != request->value.transfer.account_id) {
-                                                if(bank_account[request->value.header.account_id].account.balance >= request->value.transfer.amount) {
-                                                        if(request->value.transfer.amount <= MAX_BALANCE) {
+        if(request.value.header.account_id != 0) {
+                if(request.value.transfer.account_id > 0) {
+                        if(bank_account[request.value.header.account_id].account.account_id == request.value.header.account_id) {
+                                if(bank_account[request.value.transfer.account_id].account.account_id == request.value.transfer.account_id) {
+                                        if(request.value.header.account_id != request.value.transfer.account_id) {
+                                                if(bank_account[request.value.header.account_id].account.balance >= request.value.transfer.amount) {
+                                                        if(request.value.transfer.amount <= MAX_BALANCE) {
 
-                                                                bank_account[request->value.header.account_id].account.balance-=request->value.transfer.amount;
-                                                                bank_account[request->value.transfer.account_id].account.balance+=request->value.transfer.amount;
+                                                                bank_account[request.value.header.account_id].account.balance-=request.value.transfer.amount;
+                                                                bank_account[request.value.transfer.account_id].account.balance+=request.value.transfer.amount;
                                                                 reply.value.header.ret_code = 0;
-                                                                reply.value.transfer.balance = request->value.transfer.amount;
+                                                                reply.value.transfer.balance = request.value.transfer.amount;
 
                                                         } else {reply.value.header.ret_code = 10;}
                                                 } else {reply.value.header.ret_code = 9;}
@@ -250,12 +250,17 @@ tlv_reply_t opTransfer(tlv_request_t *request){
  * Generates the reply.
  * Changes the permition of the server FIFO to "read only"
  **/
-tlv_reply_t Shutdown(tlv_request_t *request){
-        tlv_reply_t reply;
-        reply.type = request->type;
-        reply.value.header.account_id = request->value.header.account_id;
+tlv_reply_t Shutdown(tlv_request_t const request){
+        //shutdown delay
+        logDelay(STDOUT_FILENO, request.value.header.pid, request.value.header.op_delay_ms);
+        logDelay(srv_log, request.value.header.pid, request.value.header.op_delay_ms);
+        usleep(request.value.header.op_delay_ms);
 
-        if(request->value.header.account_id == 0) {
+        tlv_reply_t reply;
+        reply.type = request.type;
+        reply.value.header.account_id = request.value.header.account_id;
+
+        if(request.value.header.account_id == 0) {
                 reply.value.shutdown.active_offices = host.tnum--;
         }else {reply.value.header.ret_code = 5;}
 
@@ -266,6 +271,10 @@ tlv_reply_t Shutdown(tlv_request_t *request){
                 perror("fchmod() failed!");
                 exit(1);
         }
+
+        pthread_mutex_lock(&server_shutdown_mutex);
+        server_shutdown = true;
+        pthread_mutex_unlock(&server_shutdown_mutex);
 
         return reply;
 }
@@ -338,20 +347,25 @@ void operationManagment(tlv_request_t request){
         //lock bank account mutex
         pthread_mutex_lock (&bank_account[request.value.header.account_id].account_mutex);
 
+        //delay
+        logSyncDelay(STDOUT_FILENO,currentThreadPID(), request.value.header.pid, request.value.header.op_delay_ms);
+        logSyncDelay(srv_log,currentThreadPID(), request.value.header.pid, request.value.header.op_delay_ms);
+        usleep(request.value.header.op_delay_ms * 1000);
+
         switch(request.type) {
         case OP_CREATE_ACCOUNT:
-                reply = createAccount(&request);
+                reply = createAccount(request);
                 break;
 
         case OP_BALANCE:
-                reply = getBalance(&request);
+                reply = getBalance(request);
                 break;
 
         case OP_TRANSFER:
                 //lock destination bank account mutex
                 pthread_mutex_lock (&bank_account[request.value.transfer.account_id].account_mutex);
 
-                reply = opTransfer(&request);
+                reply = opTransfer(request);
 
                 //unclock destination bank account mutex
                 pthread_mutex_unlock (&bank_account[request.value.transfer.account_id].account_mutex);
@@ -359,16 +373,9 @@ void operationManagment(tlv_request_t request){
                 break;
 
         case OP_SHUTDOWN:
-                reply = Shutdown(&request);
 
-                //shutdown delay
-                logDelay(STDOUT_FILENO, request.value.header.pid, request.value.header.op_delay_ms);
-                logDelay(srv_log, request.value.header.pid, request.value.header.op_delay_ms);
-                usleep(request.value.header.op_delay_ms);
+                reply = Shutdown(request);
 
-                pthread_mutex_lock(&server_shutdown_mutex);
-                server_shutdown = true;
-                pthread_mutex_unlock(&server_shutdown_mutex);
                 break;
 
         case __OP_MAX_NUMBER:

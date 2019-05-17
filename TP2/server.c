@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <errno.h>
 
 #ifdef __APPLE__
 #include <dispatch/dispatch.h>
@@ -112,17 +113,15 @@ void * bankOffice(){
          *      all pendant requests were processed.
          **/
         while(!(server_shutdown && isEmpty())) {
-                printf("ola\n");
 
                 //locks the semaphore
-                semafore_wait();
-
-                printf("adeus\n");
+                //semafore_wait();
+                while(semafore_trywait() != 0){
+                        if(server_shutdown && isEmpty()) break;
+                }
 
                 //Infinit loop. The trhead is always looking for a request.
                 while (!(server_shutdown && isEmpty())) {
-
-                        //printf("still going\n");
 
                         //when there's a request in the queue, the request is removed.
                         if (!isEmpty()) {
@@ -130,18 +129,12 @@ void * bankOffice(){
                                 //removing request from the queue.
                                 request = removeRequest();
 
-                                //delay
-                                logSyncDelay(STDOUT_FILENO,currentThreadPID(), request.value.header.pid, request.value.header.op_delay_ms);
-                                logSyncDelay(srv_log,currentThreadPID(), request.value.header.pid, request.value.header.op_delay_ms);
-                                usleep(request.value.header.op_delay_ms * 1000);
-
                                 operationManagment(request);
 
                                 break;
                         }
                 }
         }
-        printf("thread fim\n");
 
         return NULL;
 }
@@ -246,9 +239,12 @@ void readRequests(){
 
         while (!server_shutdown) {
                 do {
+                        if(server_shutdown) break;
                         n = read (srv_fifo_id, &request, sizeof(tlv_request_t));
 
                 } while (n<=0);
+
+                if(server_shutdown) break;
 
                 //Authentication of the request
                 if(requestAuthentication(&request)) {

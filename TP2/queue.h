@@ -92,9 +92,9 @@ tlv_request_t removeRequest() {
  **/
 void semafore_init(){
     #ifdef __APPLE__
-        queue.semafore = dispatch_semaphore_create(1);
+        queue.semafore = dispatch_semaphore_create(0);
     #else
-        if(sem_init(&queue.semafore, 0, 1) == -1) {
+        if(sem_init(&queue.semafore, 0, 0) == -1) {
                 perror("Semafore failed!");
                 exit(1);
         }
@@ -126,5 +126,17 @@ void semafore_post(){
         dispatch_semaphore_signal(queue.semafore);
     #else
         sem_post(&queue.semafore);
+    #endif
+}
+
+/**
+ * Tries to unlocks the semafore.
+ * Implemented to APPLE and LINUX.
+ **/
+int semafore_trywait(){
+    #ifdef __APPLE__
+        return dispatch_semaphore_wait(queue.semafore,  DISPATCH_TIME_NOW);
+    #else
+        return sem_trywait(&queue.semafore);
     #endif
 }
