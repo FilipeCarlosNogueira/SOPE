@@ -11,7 +11,8 @@
 tlv_request_t client;
 tlv_reply_t reply;
 
-char fifoname[20];
+char * fifoname;
+int srv_fifo_id;
 int usr_fifo_id;
 
 /**
@@ -143,26 +144,60 @@ bool parsingCredentials(int argc, char const *argv[]){
  **/
 void userFIFOcreate(){
 
+        fifoname = malloc(sizeof(char)*USER_FIFO_PATH_LEN);
+        if(fifoname == NULL){
+                perror("fifoname");
+                exit(1);
+        }
+
         //generate the user FIFO's name
         sprintf(fifoname, "%s%d", USER_FIFO_PATH_PREFIX, getpid());
 
         //creating the server FIFO
-        if( mkfifo(fifoname, 0666) == -1) {
+        if( mkfifo(fifoname, 0666) < 0) {
                 perror("server FIFO failed!");
                 exit(1);
         }
+}
 
-        //openning the usr FIFO in READ_ONLY
-        if((usr_fifo_id = open(fifoname, O_RDONLY)) == -1) {
-                perror("Open server FIFO failed!");
+/**
+ * Sends request to the server.
+ * Logs the request made.
+**/
+void sendRequest(){
+
+        //open server fifo
+        if((srv_fifo_id = open(SERVER_FIFO_PATH, O_WRONLY)) == 1) {
+                reply.value.header.ret_code = 1;
+        }
+
+        //send request
+        if(write(srv_fifo_id, &client, sizeof(client)) == -1) {
+                perror("write() request failed!");
                 exit(1);
-        } 
+        }
+
+        //--- auxiliar code ---
+        write(STDOUT_FILENO, "\n[REQUEST]\n", 11);
+        //---------------------
+
+        //log send request
+        if(logRequest(STDOUT_FILENO, client.value.header.pid, &client) < 0) {
+                perror("user logRequest() failed!");
+                exit(1);
+        }
 }
 
 /**
  * Reading the server reply.
  **/
 void getReply(){
+        //openning the usr FIFO in READ_ONLY
+        if((usr_fifo_id = open(fifoname, O_RDONLY)) == -1) {
+                perror("Open server FIFO failed!");
+                exit(1);
+        } 
+
         int n;
 
         //read
@@ -170,6 +205,16 @@ void getReply(){
                 n = read(usr_fifo_id, &reply, sizeof(tlv_reply_t));
 
         } while (n<=0);
+
+        //auxiliar code
+        printf("\n[REPLY]\n");
+        //------------
+
+        //log reply
+        if(logReply(STDOUT_FILENO, getpid(), &reply) < 0) {
+                perror("user logReply() failed!");
+                exit(1);
+        }
 }
 
 /**
@@ -194,38 +239,17 @@ int main(int argc, char const *argv[]){
         if(!parsingCredentials(argc, argv))
                 return -1;
 
-        int fd;
-        if((fd = open(SERVER_FIFO_PATH, O_WRONLY)) == 1) {
-                reply.value.header.ret_code = 1;
-        }
-
-        //send request
-        if(write(fd, &client, sizeof(client)) == -1) {
-                perror("write() request failed!");
-                exit(1);
-        }
-
-        //log send request
-        if(logRequest(STDOUT_FILENO, client.value.header.pid, &client) < 0) {
-                perror("user logRequest() failed!");
-                exit(1);
-        }
-
         //create user FIFO
         userFIFOcreate();
+
+        //send request to server
+        sendRequest();
 
         //get server's reply
         getReply();
 
         //close user FIFO
         userFIFOclose();
-
-        //log reply
-        printf("reply id: %d\n", reply.value.header.account_id);
-        if(logReply(STDOUT_FILENO, getpid(), &reply) < 0) {
-                perror("user logReply() failed!");
-                exit(1);
-        }
 
         return 0;
 }

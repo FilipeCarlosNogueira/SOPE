@@ -29,6 +29,7 @@ struct bankAccounts bank_account[MAX_BANK_ACCOUNTS];
 int srv_fifo_id;
 
 bool server_shutdown = false;
+pthread_mutex_t server_shutdown_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /**
  * parses the data provided by the arguments of the shell.
@@ -102,10 +103,6 @@ void serverFIFOopen(){
  **/
 void * bankOffice(){
 
-        //auxiliar code
-        int arg = currentThreadPID();
-        //--------------
-
         tlv_request_t request;
 
         /**
@@ -116,8 +113,12 @@ void * bankOffice(){
          **/
         while(!(server_shutdown && isEmpty())) {
 
+                printf("**thread going\n");
+
                 //locks the semaphore
                 semafore_wait();
+
+                printf("**sem lock\n");
 
                 //Infinit loop. The trhead is always looking for a request.
                 while (1) {
@@ -128,17 +129,14 @@ void * bankOffice(){
                                 //removing request from the queue.
                                 request = removeRequest();
 
-                                //--- auxiliar code ---
-                                write(STDOUT_FILENO, "\n[REQUEST]\n", 11);
-                                logRequest(STDOUT_FILENO, arg, &request);
-                                //---------------------
+                                operationManagment(request);
 
-                                server_shutdown = operationManagment(request);
-
-                                break;
+                                //break;
                         }
                 }
         }
+
+        printf("thread fim\n");
 
         return NULL;
 }
@@ -164,12 +162,12 @@ void openBankOffices(){
 bool validateCredentials(char * request_pass, bank_account_t * bank_account){
 
         char pass_salt[MAX_PASSWORD_LEN+SALT_LEN];
-        char * hash_compare;
+        char * hash_compare = malloc(HASH_LEN);
 
         strcpy(pass_salt, request_pass);
         strcat(pass_salt, bank_account->salt);
 
-        hash_compare = hash(pass_salt);
+        strcpy(hash_compare, hash(pass_salt));
 
         if(strcmp(hash_compare, bank_account->hash) != 0){
                 return false;
@@ -177,8 +175,9 @@ bool validateCredentials(char * request_pass, bank_account_t * bank_account){
 
         return true;
 }
+
 /**
- * Frirst authentication of the request.
+ * First authentication of the request.
  * Validates the combination of the id of the account and the given password.
  * Returns true is valid, false otherwise.
  **/
@@ -200,13 +199,13 @@ bool requestAuthentication(tlv_request_t * request){
                 flag = 1;
         }
 
-        Validate account login Credentials
+        //Validate account login Credentials
         if(!validateCredentials(request->value.header.password, &bank_account[request->value.header.account_id].account)){
                 flag = 2;
         }
 
         //If request was not valid 
-        if(flag){
+        if(flag == 1 || flag == 2){
                 reply.type = request->type;
                 reply.value.header.account_id = request->value.header.account_id;
 
@@ -219,13 +218,8 @@ bool requestAuthentication(tlv_request_t * request){
                 reply.value.balance.balance = 0;
                 reply.length = sizeof(reply);
 
-                //logging reply
-                printf("3\n");
-                if(logReply(STDOUT_FILENO, getpid(), &reply) < 0) {
-                        perror("user logRequest() falied!");
-                        exit(1);
-                }
-                printf("3\n");
+                //send reply to user
+                sendReply(reply, request->value.header.pid, getpid());
 
                 return false;
         }

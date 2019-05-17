@@ -102,7 +102,7 @@ int currentThreadPID(){
 
         for(int i = 0; i < host.tnum; i++) {
                 if(bank_office[i] == pthread_self()) {
-                        arg = i;
+                        arg = i+1;
                 }
         }
 
@@ -174,12 +174,6 @@ tlv_reply_t createAccount(tlv_request_t *request){
 
         reply.length = sizeof(reply);
 
-        //logging reply
-        if(logReply(STDOUT_FILENO, currentThreadPID(), &reply) < 0) {
-                perror("user logRequest() falied!");
-                exit(1);
-        }
-
         return reply;
 }
 
@@ -201,12 +195,6 @@ tlv_reply_t getBalance(tlv_request_t *request){
         } else {reply.value.header.ret_code = 5;}
 
         reply.length = sizeof(reply);
-
-        //logging reply
-        if(logReply(STDOUT_FILENO, currentThreadPID(), &reply) < 0) {
-                perror("user logRequest() falied!");
-                exit(1);
-        }
 
         return reply;
 }
@@ -244,12 +232,6 @@ tlv_reply_t opTransfer(tlv_request_t *request){
 
         reply.length = sizeof(reply);
 
-        //logging reply
-        if(logReply(STDOUT_FILENO, currentThreadPID(), &reply) < 0) {
-                perror("user logRequest() falied!");
-                exit(1);
-        }
-
         return reply;
 }
 
@@ -275,21 +257,16 @@ tlv_reply_t Shutdown(tlv_request_t *request){
                 exit(1);
         }
 
-        //logging reply
-        if(logReply(STDOUT_FILENO, currentThreadPID(), &reply) < 0) {
-                perror("user logRequest() falied!");
-                exit(1);
-        }
-
         return reply;
 }
 
 /**
- * 
+ * Sends the reply to the proper user.
+ * Loggs the reply made.
 **/
-void sendReply(tlv_reply_t *reply, int usr_pid){
+void sendReply(tlv_reply_t reply, int usr_pid, int thread_pid){
         int usr_fifo_id;
-        char fifoname[20];
+        char *fifoname = malloc(sizeof(char) * USER_FIFO_PATH_LEN);
 
         //generates the FIFO path
         sprintf(fifoname, "%s%d", USER_FIFO_PATH_PREFIX, usr_pid);
@@ -308,6 +285,16 @@ void sendReply(tlv_reply_t *reply, int usr_pid){
 
 
         close(usr_fifo_id);
+
+        //auxiliar code
+        printf("\n[REPLY]\n");
+        //------------
+
+        //logging reply
+        if(logReply(STDOUT_FILENO, thread_pid, &reply) < 0) {
+                perror("user logRequest() falied!");
+                exit(1);
+        }
 }
 
 /**
@@ -315,47 +302,58 @@ void sendReply(tlv_reply_t *reply, int usr_pid){
  * Before the execution of the operation, tries to lock the account mutex.
  * This insures that each account runs one operation at a time.
  **/
-bool operationManagment(tlv_request_t request){
+void operationManagment(tlv_request_t request){
+
+        //--- auxiliar code ---
+        write(STDOUT_FILENO, "\n[REQUEST]\n", 11);
+        logRequest(STDOUT_FILENO, currentThreadPID(), &request);
+        //---------------------
 
         tlv_reply_t reply;
-
-        //auxiliar code
-        printf("\n[REPLY]\n");
-        //------------
 
         //lock bank account mutex
         pthread_mutex_lock (&bank_account[request.value.header.account_id].account_mutex);
 
+        //if the operation to shutdown the server hasn't been requested
+        if(!server_shutdown){
+                pthread_mutex_lock(&server_shutdown_mutex);
+                server_shutdown = false;
+                printf("not suhtdown\n");
+                pthread_mutex_unlock(&server_shutdown_mutex);
+        }
+
         switch(request.type) {
-        case OP_CREATE_ACCOUNT:
-                reply = createAccount(&request);
-                break;
+                case OP_CREATE_ACCOUNT:
+                        reply = createAccount(&request);
+                        break;
 
-        case OP_BALANCE:
-                reply = getBalance(&request);
-                break;
+                case OP_BALANCE:
+                        reply = getBalance(&request);
+                        break;
 
-        case OP_TRANSFER:
-                reply = opTransfer(&request);
-                break;
+                case OP_TRANSFER:
+                        reply = opTransfer(&request);
+                        break;
 
-        case OP_SHUTDOWN:
-                reply = Shutdown(&request);
-                return true;
-                break;
+                case OP_SHUTDOWN:
+                        reply = Shutdown(&request);
+                        pthread_mutex_lock(&server_shutdown_mutex);
+                        server_shutdown = true;
+                        pthread_mutex_unlock(&server_shutdown_mutex);
+                        break;
 
-        case __OP_MAX_NUMBER:
-                break;
+                case __OP_MAX_NUMBER:
+                        reply.type = __OP_MAX_NUMBER;
+                        reply.length = sizeof(reply);
+                        break;
 
-        default:
-                break;
+                default:
+                        break;
         }
 
         //send reply to user
-        sendReply(&reply, request.value.header.pid);
+        sendReply(reply, request.value.header.pid, currentThreadPID());
 
         //unclock bank account mutex
         pthread_mutex_unlock (&bank_account[request.value.header.account_id].account_mutex);
-
-        return false;
 }

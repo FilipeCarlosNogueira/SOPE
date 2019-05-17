@@ -57,3 +57,4 @@ extern int srv_fifo_id;
 
 //sever shutdown flag
 extern bool server_shutdown;
+extern pthread_mutex_t server_shutdown_mutex;
