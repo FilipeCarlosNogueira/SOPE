@@ -317,9 +317,9 @@ int main(int argc, char const *argv[]){
                 pthread_mutex_init (&bank_account[i].account_mutex, NULL);
         }
 
-        serverFIFOopen();
-
         openBankOffices();
+
+        serverFIFOopen();
 
         readRequests();
 
