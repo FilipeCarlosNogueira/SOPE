@@ -11,6 +11,9 @@
 #include "sope.h"
 #include "variables.h"
 
+
+int srv_log;
+
 /**
  * Funtion that generates the hash operation.
  **/
@@ -127,6 +130,10 @@ void adminAcount(){
                 perror("Creation of Admin Acount failed!");
                 exit(1);
         }
+        if(logAccountCreation(srv_log, 0, &bank_account[0].account) < 0) {
+                perror("Creation of Admin Acount failed!");
+                exit(1);
+        }
 }
 
 /**
@@ -162,7 +169,12 @@ tlv_reply_t createAccount(tlv_request_t *request){
                                                 if(logAccountCreation(STDOUT_FILENO, currentThreadPID(), &bank_account[request->value.create.account_id].account) < 0) {
                                                         perror("Creation of Account failed!");
                                                         exit(1);
-                                                } else {reply.value.header.ret_code = 0;}
+                                                }
+                                                if(logAccountCreation(srv_log, currentThreadPID(), &bank_account[request->value.create.account_id].account) < 0) {
+                                                        perror("Creation of Account failed!");
+                                                        exit(1);
+                                                }
+                                                reply.value.header.ret_code = 0;
                                         } else {reply.value.header.ret_code = 10;}
                                 } else {reply.value.header.ret_code = 8;}
                         } else {reply.value.header.ret_code = 7;}

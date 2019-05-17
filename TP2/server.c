@@ -28,8 +28,6 @@ struct bankAccounts bank_account[MAX_BANK_ACCOUNTS];
 
 int srv_fifo_id;
 
-int srv_log;
-
 bool server_shutdown = false;
 pthread_mutex_t server_shutdown_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -119,6 +117,9 @@ void * bankOffice(){
 
                 //locks the semaphore
                 semafore_wait();
+                logDelay(STDOUT_FILENO, request.value.header.pid, request.value.header.op_delay_ms);
+                logDelay(srv_log, request.value.header.pid, request.value.header.op_delay_ms);
+                usleep(request.value.header.op_delay_ms);
 
                 printf("**sem lock\n");
 
@@ -155,6 +156,7 @@ void openBankOffices(){
 
                 //log creation
                 logBankOfficeOpen(STDOUT_FILENO, i+1, bank_office[i]);
+                logBankOfficeOpen(srv_log, i+1, bank_office[i]);
         }
 }
 
@@ -268,6 +270,7 @@ void closeBankOffices(){
 
                 //log closure
                 logBankOfficeClose(STDOUT_FILENO, i+1, bank_office[i]);
+                logBankOfficeClose(srv_log, i+1, bank_office[i]);
         }
 }
 
