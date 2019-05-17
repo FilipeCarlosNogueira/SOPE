@@ -10,16 +10,16 @@
 
 struct requests
 {
-        tlv_request_t requestArray[MAX_REQUESTS];
-        int first;
-        int last;
-        int itemCount;
+    tlv_request_t requestArray[MAX_REQUESTS];
+    int first;
+    int last;
+    int itemCount;
 
-        #ifdef __APPLE__
-            dispatch_semaphore_t semafore;
-        #else
-            sem_t semafore;
-        #endif
+    #ifdef __APPLE__
+        dispatch_semaphore_t semafore;
+    #else
+        sem_t semafore;
+    #endif
 };
 
 struct server

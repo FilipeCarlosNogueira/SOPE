@@ -76,8 +76,6 @@ bool parsingArguments(int argc, char const *argv[]){
  * Creating and opening the server FIFO in read only.
  **/
 void serverFIFOopen(){
-        //DELETE BEFORE DELEVERY
-        unlink(SERVER_FIFO_PATH);
 
         //creating the server FIFO
         if( mkfifo(SERVER_FIFO_PATH, 0666) == -1) {
@@ -87,8 +85,15 @@ void serverFIFOopen(){
 
         //openning the srv FIFO in READ_ONLY
         if((srv_fifo_id = open(SERVER_FIFO_PATH, O_RDONLY)) == -1) {
-                // tlv_reply_t reply;
-                // reply.
+                tlv_reply_t reply;
+                reply.value.header.ret_code = 2;
+                reply.length = sizeof(reply);
+
+                //log reply
+                if(logReply(srv_log, currentThreadID(), &reply) < 0){
+                        perror("open server fifo logReply() RC_SRV_DOWN failed!");
+                }
+
                 perror("Open server FIFO failed!");
                 exit(1);
         }
@@ -113,10 +118,7 @@ void * bankOffice(){
         while(!(server_shutdown && isEmpty())) {
 
                 //locks the semaphore
-                //semafore_wait();
-                while(semafore_trywait() != 0){
-                        if(server_shutdown && isEmpty()) break;
-                }
+                semafore_wait();
 
                 //Infinit loop. The trhead is always looking for a request.
                 while (!(server_shutdown && isEmpty())) {
@@ -149,8 +151,10 @@ void openBankOffices(){
                 pthread_create(&bank_office[i], NULL, &bankOffice, NULL);
 
                 //log creation
-                logBankOfficeOpen(STDOUT_FILENO, i+1, bank_office[i]);
-                logBankOfficeOpen(srv_log, i+1, bank_office[i]);
+                if(logBankOfficeOpen(srv_log, i+1, bank_office[i]) < 0){
+                        perror("logBankOfficeOpen() failed!");
+                        exit(1);
+                }
         }
 }
 
@@ -251,7 +255,7 @@ void readRequests(){
                         insert(request);
 
                         //unlocks the semaphore
-                        semafore_post();
+                        semafore_post(request.value.header.pid);
                 }
         }
 }
@@ -263,12 +267,14 @@ void readRequests(){
 void closeBankOffices(){
         for (int i = 0; i < host.tnum; i++) {
                 //closes bank office
-                pthread_cancel(bank_office[i]);
+                //pthread_cancel(bank_office[i]);
                 pthread_join(bank_office[i], NULL);
 
                 //log closure
-                logBankOfficeClose(STDOUT_FILENO, i+1, bank_office[i]);
-                logBankOfficeClose(srv_log, i+1, bank_office[i]);
+                if(logBankOfficeClose(srv_log, i+1, bank_office[i]) < 0){
+                        perror("logBankOfficeClose() failed!");
+                        exit(1);
+                }
         }
         free(bank_office);
 
@@ -296,14 +302,14 @@ int main(int argc, char const *argv[]){
         //parses the data provided by the arguments of the shell
         if(!parsingArguments(argc, argv))
                 return -1;
-
-        adminAcount();
-
+        
         //open slog.txt
         if((srv_log = open(SERVER_LOGFILE, O_WRONLY | O_APPEND | O_CREAT,0600)) == -1) {
                 perror("open slog.txt failed");
                 exit(1);
         }
+
+        adminAcount();
 
         time_t t;
         /* Intializes random number generator */

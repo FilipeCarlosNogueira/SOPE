@@ -11,7 +11,6 @@
 #include "sope.h"
 #include "variables.h"
 
-
 int srv_log;
 
 /**
@@ -93,10 +92,10 @@ void generateBankCredentials(int bank_account_id){
 }
 
 /**
- * Identifies the TPID of the current thread.
+ * Identifies the ID of the current thread.
  **/
-int currentThreadPID(){
-        int arg;
+int currentThreadID(){
+        int arg = 0;
 
         for(int i = 0; i < host.tnum; i++) {
                 if(bank_office[i] == pthread_self()) {
@@ -121,13 +120,6 @@ void adminAcount(){
 
         //admin account balance
         bank_account[0].account.balance = 0;
-
-        //--- auxiliar code ---
-        if(logAccountCreation(STDOUT_FILENO, 0, &bank_account[0].account) < 0) {
-                perror("Creation of Admin Acount failed!");
-                exit(1);
-        }
-        //---------------------
 
         //log creation of admin
         if(logAccountCreation(srv_log, 0, &bank_account[0].account) < 0) {
@@ -157,25 +149,21 @@ tlv_reply_t createAccount(tlv_request_t const request){
                         if(bank_account[request.value.header.account_id].account.account_id == request.value.header.account_id) {
                                 if(request.value.header.account_id != request.value.create.account_id) {
                                         if(request.value.create.balance <= MAX_BALANCE) {
+
                                                 bank_account[request.value.create.account_id].account.account_id = request.value.create.account_id;
 
                                                 generateBankCredentials(request.value.create.account_id);
 
                                                 bank_account[request.value.create.account_id].account.balance = request.value.create.balance;
 
-                                                //--- auxiliar code ---
-                                                printf("\n[CREATE]\n");
-                                                if(logAccountCreation(STDOUT_FILENO, currentThreadPID(), &bank_account[request.value.create.account_id].account) < 0) {
+                                                //log account creation
+                                                if(logAccountCreation(srv_log, currentThreadID(), &bank_account[request.value.create.account_id].account) < 0) {
                                                         perror("Creation of Account failed!");
                                                         exit(1);
                                                 }
-                                                //---------------------
 
-                                                if(logAccountCreation(srv_log, currentThreadPID(), &bank_account[request.value.create.account_id].account) < 0) {
-                                                        perror("Creation of Account failed!");
-                                                        exit(1);
-                                                }
                                                 reply.value.header.ret_code = 0;
+
                                         } else {reply.value.header.ret_code = 10;}
                                 } else {reply.value.header.ret_code = 8;}
                         } else {reply.value.header.ret_code = 7;}
@@ -216,12 +204,8 @@ tlv_reply_t getBalance(tlv_request_t const request){
  **/
 tlv_reply_t opTransfer(tlv_request_t const request){
 
-        //--- auxiliar code ---
-        logSyncDelay(STDOUT_FILENO,currentThreadPID(), request.value.header.pid, request.value.header.op_delay_ms);
-        //---------------------
-
         //delay
-        if(logSyncDelay(srv_log,currentThreadPID(), request.value.header.pid, request.value.header.op_delay_ms) < 0){
+        if(logSyncDelay(srv_log,currentThreadID(), request.value.header.pid, request.value.header.op_delay_ms) < 0){
                 perror("server logSyncDelay() failed!");
                 exit(1);
         }
@@ -265,7 +249,7 @@ tlv_reply_t opTransfer(tlv_request_t const request){
 /**
  * Executes operation Shut Down.
  * Generates the reply.
- * Changes the permition of the server FIFO to "read only"
+ * Changes the permition of the server FIFO to "read only".
  **/
 tlv_reply_t Shutdown(tlv_request_t const request){
 
@@ -274,14 +258,10 @@ tlv_reply_t Shutdown(tlv_request_t const request){
         reply.value.header.account_id = request.value.header.account_id;
 
         if(request.value.header.account_id == 0) {
-                reply.value.shutdown.active_offices = host.tnum--;
+                reply.value.shutdown.active_offices = host.tnum;
         }else {reply.value.header.ret_code = 5;}
 
         reply.length = sizeof(reply);
-
-        //--- auxiliar code ---
-        logDelay(STDOUT_FILENO, request.value.header.pid, request.value.header.op_delay_ms);
-        //---------------------
 
         //shutdown delay
         if(logDelay(srv_log, request.value.header.pid, request.value.header.op_delay_ms) < 0){
@@ -300,9 +280,25 @@ tlv_reply_t Shutdown(tlv_request_t const request){
                 exit(1);
         }
 
+        //lock server shutdown mutex
         pthread_mutex_lock(&server_shutdown_mutex);
+
+        //mutex lock log
+        if(logSyncMech(srv_log, currentThreadID(), SYNC_OP_MUTEX_LOCK, SYNC_ROLE_CONSUMER, request.value.header.pid) < 0){
+                perror("mutex lock logSyncMech() failed!");
+                exit(1);
+        }
+
         server_shutdown = true;
+
+        //unlock server mutex
         pthread_mutex_unlock(&server_shutdown_mutex);
+
+        //mutex unlock log
+        if(logSyncMech(srv_log, currentThreadID(), SYNC_OP_MUTEX_UNLOCK, SYNC_ROLE_CONSUMER, request.value.header.pid) < 0){
+                perror("mutex lock logSyncMech() failed!");
+                exit(1);
+        }
 
         return reply;
 }
@@ -321,6 +317,15 @@ void sendReply(tlv_reply_t reply, int usr_pid, int thread_pid){
         //opens the user FIFO to WRITE_ONLY
         if((usr_fifo_id = open(fifoname, O_WRONLY)) == -1) {
                 reply.value.header.ret_code = 3;
+
+                //logging reply
+                if(logReply(srv_log, thread_pid, &reply) < 0) {
+                        perror("user logReply() failed!");
+                        exit(1);
+                }
+
+                perror("open usr fifo failed!");
+                exit(1);
         }
 
         //send reply
@@ -331,14 +336,6 @@ void sendReply(tlv_reply_t reply, int usr_pid, int thread_pid){
 
         //closes user FIFO
         close(usr_fifo_id);
-
-        //--- auxiliar code ---
-        printf("\n[REPLY]\n");
-        if(logReply(STDOUT_FILENO, thread_pid, &reply) < 0) {
-                perror("user logReply() failed!");
-                exit(1);
-        }
-        //---------------------
 
         //logging reply
         if(logReply(srv_log, thread_pid, &reply) < 0) {
@@ -353,14 +350,9 @@ void sendReply(tlv_reply_t reply, int usr_pid, int thread_pid){
  * This insures that each account runs one operation at a time.
  **/
 void operationManagment(tlv_request_t request){
-
-        //--- auxiliar code ---
-        write(STDOUT_FILENO, "\n[REQUEST]\n", 11);
-        logRequest(STDOUT_FILENO, currentThreadPID(), &request);
-        //---------------------
         
         //log request
-        if(logRequest(srv_log, currentThreadPID(), &request) < 0){
+        if(logRequest(srv_log, currentThreadID(), &request) < 0){
                 perror("server logRequest() failed!");
                 exit(1);
         }
@@ -370,14 +362,17 @@ void operationManagment(tlv_request_t request){
         //lock bank account mutex
         pthread_mutex_lock (&bank_account[request.value.header.account_id].account_mutex);
 
+        //mutex lock log
+        if(logSyncMech(srv_log, currentThreadID(), SYNC_OP_MUTEX_LOCK, SYNC_ROLE_ACCOUNT, request.value.header.account_id) < 0){
+                perror("mutex lock logSyncMech() failed!");
+                exit(1);
+        }
+
         //delay
         if(request.type != OP_SHUTDOWN){
-                //--- auxiliar code ---
-                logSyncDelay(STDOUT_FILENO,currentThreadPID(), request.value.header.pid, request.value.header.op_delay_ms);
-                //---------------------
                 
                 //log operation delay
-                if(logSyncDelay(srv_log,currentThreadPID(), request.value.header.pid, request.value.header.op_delay_ms) < 0){
+                if(logSyncDelay(srv_log,currentThreadID(), request.value.header.pid, request.value.header.op_delay_ms) < 0){
                         perror("server logSyncDelay() failed!");
                         exit(1);
                 }
@@ -401,10 +396,22 @@ void operationManagment(tlv_request_t request){
                         //lock destination bank account mutex
                         pthread_mutex_lock (&bank_account[request.value.transfer.account_id].account_mutex);
 
+                        //mutex lock log
+                        if(logSyncMech(srv_log, currentThreadID(), SYNC_OP_MUTEX_LOCK, SYNC_ROLE_ACCOUNT, request.value.transfer.account_id) < 0){
+                                perror("mutex lock logSyncMech() failed!");
+                                exit(1);
+                        }
+
                         reply = opTransfer(request);
 
                         //unclock destination bank account mutex
                         pthread_mutex_unlock (&bank_account[request.value.transfer.account_id].account_mutex);
+
+                        //mutex unlock log
+                        if(logSyncMech(srv_log, currentThreadID(), SYNC_OP_MUTEX_UNLOCK, SYNC_ROLE_ACCOUNT, request.value.transfer.account_id) < 0){
+                                perror("mutex lock logSyncMech() failed!");
+                                exit(1);
+                        }
 
                         break;
 
@@ -424,8 +431,14 @@ void operationManagment(tlv_request_t request){
         }
 
         //send reply to user
-        sendReply(reply, request.value.header.pid, currentThreadPID());
+        sendReply(reply, request.value.header.pid, currentThreadID());
 
         //unclock bank account mutex
         pthread_mutex_unlock (&bank_account[request.value.header.account_id].account_mutex);
+
+        //mutex unlock log
+        if(logSyncMech(srv_log, currentThreadID(), SYNC_OP_MUTEX_UNLOCK, SYNC_ROLE_ACCOUNT, request.value.header.account_id) < 0){
+                perror("mutex lock logSyncMech() failed!");
+                exit(1);
+        }
 }

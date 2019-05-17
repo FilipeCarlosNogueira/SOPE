@@ -172,10 +172,6 @@ void sendRequest(){
         //open server fifo
         if((srv_fifo_id = open(SERVER_FIFO_PATH, O_WRONLY)) < 0) {
                 reply.value.header.ret_code = 1;
-                if(logReply(STDOUT_FILENO, getpid(), &reply) < 0) {
-                        perror("user logReply() failed!");
-                        exit(1);
-                }
                 if(logReply(usr_log, getpid(), &reply) < 0) {
                         perror("user logReply() failed!");
                         exit(1);
@@ -189,16 +185,7 @@ void sendRequest(){
                 exit(1);
         }
 
-        //--- auxiliar code ---
-        write(STDOUT_FILENO, "\n[REQUEST]\n", 11);
-        //---------------------
-
         //log send request
-        if(logRequest(STDOUT_FILENO, client.value.header.pid, &client) < 0) {
-                perror("user logRequest() failed!");
-                exit(1);
-        }
-
         if(logRequest(usr_log, client.value.header.pid, &client) < 0) {
                 perror("user logRequest() failed!");
                 exit(1);
@@ -223,16 +210,7 @@ void getReply(){
 
         } while (n<=0);
 
-        //auxiliar code
-        printf("\n[REPLY]\n");
-        //------------
-
         //log reply
-        if(logReply(STDOUT_FILENO, getpid(), &reply) < 0) {
-                perror("user logReply() failed!");
-                exit(1);
-        }
-
         if(logReply(usr_log, getpid(), &reply) < 0) {
                 perror("user logReply() failed!");
                 exit(1);
