@@ -118,7 +118,7 @@ void * bankOffice(){
         while(!(server_shutdown && isEmpty())) {
 
                 //locks the semaphore
-                semafore_wait();
+                semafore_wait(request.value.header.pid);
 
                 //Infinit loop. The trhead is always looking for a request.
                 while (!(server_shutdown && isEmpty())) {
@@ -128,7 +128,7 @@ void * bankOffice(){
 
                                 //removing request from the queue.
                                 request = removeRequest();
-                                
+
                                 //executes operation
                                 operationManagment(request);
 
@@ -302,7 +302,7 @@ int main(int argc, char const *argv[]){
         //parses the data provided by the arguments of the shell
         if(!parsingArguments(argc, argv))
                 return -1;
-        
+
         //open slog.txt
         if((srv_log = open(SERVER_LOGFILE, O_WRONLY | O_APPEND | O_CREAT,0600)) == -1) {
                 perror("open slog.txt failed");
