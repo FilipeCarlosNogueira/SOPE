@@ -81,7 +81,7 @@ int semafore_trywait();
  * Locks the semafore.
  * Implemented to APPLE and LINUX.
  **/
-void semafore_wait(int sid);
+void semafore_wait();
 
 /**
  * Unlocks the semafore.

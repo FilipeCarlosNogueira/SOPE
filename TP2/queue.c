@@ -160,7 +160,7 @@ int semafore_trywait(){
  * Locks the semafore.
  * Implemented to APPLE and LINUX.
  **/
-void semafore_wait(int sid){
+void semafore_wait(){
         int sval;
 
     #ifdef __APPLE__
@@ -169,7 +169,7 @@ void semafore_wait(int sid){
         sval = 0;
 
         //log semafore sync
-        if(logSyncMechSem(srv_log, currentThreadID(), SYNC_OP_SEM_WAIT, SYNC_ROLE_CONSUMER, sid, sval) < 0) {
+        if(logSyncMechSem(srv_log, currentThreadID(), SYNC_OP_SEM_WAIT, SYNC_ROLE_CONSUMER, 0, sval) < 0) {
                 perror("sem_post logSyncMechSem() failed!");
                 exit(1);
         }
@@ -188,7 +188,7 @@ void semafore_wait(int sid){
         }
 
         //log semafore sync
-        if(logSyncMechSem(srv_log, currentThreadID(), SYNC_OP_SEM_WAIT, SYNC_ROLE_CONSUMER, sid, sval) < 0) {
+        if(logSyncMechSem(srv_log, currentThreadID(), SYNC_OP_SEM_WAIT, SYNC_ROLE_CONSUMER, 0, sval) < 0) {
                 perror("sem_wait logSyncMechSem() failed!");
                 exit(1);
         }
