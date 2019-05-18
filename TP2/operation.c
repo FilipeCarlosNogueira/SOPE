@@ -339,26 +339,24 @@ void sendReply(tlv_reply_t reply, int usr_pid, int thread_pid){
                 //logging reply
                 if(logReply(srv_log, thread_pid, &reply) < 0) {
                         perror("user logReply() failed!");
-                        exit(1);
                 }
 
                 perror("open usr fifo failed!");
-                exit(1);
         }
+        else{
+                //send reply
+                if(write(usr_fifo_id, &reply, sizeof(reply)) == -1) {
+                        perror("Write reply to user failed!");
+                }
 
-        //send reply
-        if(write(usr_fifo_id, &reply, sizeof(reply)) == -1) {
-                perror("Write reply to user failed!");
-                exit(1);
-        }
+                //closes user FIFO
+                close(usr_fifo_id);
 
-        //closes user FIFO
-        close(usr_fifo_id);
-
-        //logging reply
-        if(logReply(srv_log, thread_pid, &reply) < 0) {
-                perror("user logReply() failed!");
-                exit(1);
+                //logging reply
+                if(logReply(srv_log, thread_pid, &reply) < 0) {
+                        perror("user logReply() failed!");
+                        exit(1);
+                }
         }
 }
 
