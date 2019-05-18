@@ -8,7 +8,7 @@ server: $(OBJECTS1)
 	gcc $(OBJECTS1)	-pthread -o server
 
 user: $(OBJECTS2)
-	gcc $(OBJECTS2) -o user
+	gcc $(OBJECTS2) -pthread -o user
 
 
 server.o:	sope.h	constants.h	types.h	operation.h	variables.h	queue.h
