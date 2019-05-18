@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <time.h>
 
 #include "sope.h"
 
@@ -196,6 +197,8 @@ void sendRequest(){
  * Reading the server reply.
  **/
 void getReply(){
+        clock_t start_t, end_t, total_t;
+
         //openning the usr FIFO in READ_ONLY
         if((usr_fifo_id = open(fifoname, O_RDONLY)) == -1) {
                 perror("Open server FIFO failed!");
@@ -204,9 +207,21 @@ void getReply(){
 
         int n;
 
+        start_t = clock();
+
         //read
         do {
                 n = read(usr_fifo_id, &reply, sizeof(tlv_reply_t));
+
+                end_t = clock();
+                total_t = (double)(end_t - start_t) / CLOCKS_PER_SEC;
+                
+                //FIFO_TIMEOUT_SECS
+                if( total_t > FIFO_TIMEOUT_SECS){
+                        reply.value.header.ret_code = RC_SRV_TIMEOUT;
+                        reply.length = sizeof(reply);
+                        break;
+                }
 
         } while (n<=0);
 
