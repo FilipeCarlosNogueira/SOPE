@@ -16,6 +16,7 @@
 #include "sope.h"
 #include "operation.h"
 #include "queue.h"
+#include "variables.h"
 
 /**
  * Server data.
