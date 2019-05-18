@@ -18,4 +18,4 @@ operation.o:	sope.h	constants.h	types.h	operation.h	variables.h	queue.h
 log.o:	sope.h	constants.h	types.h	operation.h	variables.h	queue.h
 
 clean:
-	rm *.o server user queue operation log *.txt
+	rm *.o server user *.txt
