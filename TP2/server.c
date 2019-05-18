@@ -119,7 +119,7 @@ void * bankOffice(){
         while(!(server_shutdown && isEmpty())) {
 
                 //locks the semaphore
-                semafore_wait(request.value.header.pid);
+                semafore_wait(0);
 
                 //Infinit loop. The trhead is always looking for a request.
                 while (!(server_shutdown && isEmpty())) {
