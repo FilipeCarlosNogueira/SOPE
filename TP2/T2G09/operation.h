@@ -37,7 +37,7 @@ void saltGenerator(char* salt);
  *      computation of the hash;
  * Attributes the calculated salt and hash to the bank_office[current_ID].
  **/
-void generateBankCredentials(int bank_account_id);
+void generateBankCredentials(int bank_account_id, char const * password);
 
 /**
  * Identifies the ID of the current thread.

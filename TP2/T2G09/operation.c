@@ -96,14 +96,14 @@ void saltGenerator(char* salt){
  *      computation of the hash;
  * Attributes the calculated salt and hash to the bank_office[current_ID].
  **/
-void generateBankCredentials(int bank_account_id){
+void generateBankCredentials(int bank_account_id, char const * password){
         char pass_salt[MAX_PASSWORD_LEN+SALT_LEN];
 
         //bank account salt
         saltGenerator(bank_account[bank_account_id].account.salt);
 
         //bank account hash
-        strcpy(pass_salt, host.password);
+        strcpy(pass_salt, password);
         strcat(pass_salt, bank_account[bank_account_id].account.salt);
 
         strcpy(bank_account[bank_account_id].account.hash, hash(pass_salt));
@@ -134,7 +134,7 @@ void adminAcount(){
         bank_account[0].account.account_id = 0;
 
         //admin account salt & hash
-        generateBankCredentials(0);
+        generateBankCredentials(0, host.password);
 
         //admin account balance
         bank_account[0].account.balance = 0;
@@ -170,7 +170,7 @@ tlv_reply_t createAccount(tlv_request_t const request){
 
                                                 bank_account[request.value.create.account_id].account.account_id = request.value.create.account_id;
 
-                                                generateBankCredentials(request.value.create.account_id);
+                                                generateBankCredentials(request.value.create.account_id, request.value.create.password);
 
                                                 bank_account[request.value.create.account_id].account.balance = request.value.create.balance;
 
@@ -180,13 +180,13 @@ tlv_reply_t createAccount(tlv_request_t const request){
                                                         exit(1);
                                                 }
 
-                                                reply.value.header.ret_code = 0;
+                                                reply.value.header.ret_code = RC_OK;
 
-                                        } else {reply.value.header.ret_code = 10;}
-                                } else {reply.value.header.ret_code = 8;}
-                        } else {reply.value.header.ret_code = 7;}
-                } else {reply.value.header.ret_code = 6;}
-        }else {reply.value.header.ret_code = 5;}
+                                        } else {reply.value.header.ret_code = RC_TOO_HIGH;}
+                                } else {reply.value.header.ret_code = RC_SAME_ID;}
+                        } else {reply.value.header.ret_code = RC_ID_NOT_FOUND;}
+                } else {reply.value.header.ret_code = RC_ID_IN_USE;}
+        }else {reply.value.header.ret_code = RC_OP_NALLOW;}
 
 
         reply.length = sizeof(reply);
@@ -206,10 +206,10 @@ tlv_reply_t getBalance(tlv_request_t const request){
 
         if(request.value.header.account_id != 0) {
                 if(bank_account[request.value.header.account_id].account.account_id == request.value.header.account_id) {
-                        reply.value.header.ret_code = 0;
+                        reply.value.header.ret_code = RC_OK;
                         reply.value.balance.balance = bank_account[request.value.header.account_id].account.balance;
-                } else {reply.value.header.ret_code = 7;}
-        } else {reply.value.header.ret_code = 5;}
+                } else {reply.value.header.ret_code = RC_ID_NOT_FOUND;}
+        } else {reply.value.header.ret_code = RC_OP_NALLOW;}
 
         reply.length = sizeof(reply);
 
@@ -248,16 +248,16 @@ tlv_reply_t opTransfer(tlv_request_t const request){
 
                                                                 bank_account[request.value.header.account_id].account.balance-=request.value.transfer.amount;
                                                                 bank_account[request.value.transfer.account_id].account.balance+=request.value.transfer.amount;
-                                                                reply.value.header.ret_code = 0;
+                                                                reply.value.header.ret_code = RC_OK;
                                                                 reply.value.transfer.balance = request.value.transfer.amount;
 
-                                                        } else {reply.value.header.ret_code = 10;}
-                                                } else {reply.value.header.ret_code = 9;}
-                                        } else {reply.value.header.ret_code = 8;}
-                                } else {reply.value.header.ret_code = 7;}
-                        } else {reply.value.header.ret_code = 7;}
-                }else {reply.value.header.ret_code = 5;}
-        } else {reply.value.header.ret_code = 5;}
+                                                        } else {reply.value.header.ret_code = RC_TOO_HIGH;}
+                                                } else {reply.value.header.ret_code = RC_NO_FUNDS;}
+                                        } else {reply.value.header.ret_code = RC_SAME_ID;}
+                                } else {reply.value.header.ret_code = RC_ID_NOT_FOUND;}
+                        } else {reply.value.header.ret_code = RC_ID_NOT_FOUND;}
+                }else {reply.value.header.ret_code = RC_OP_NALLOW;}
+        } else {reply.value.header.ret_code = RC_OP_NALLOW;}
 
         reply.length = sizeof(reply);
 
@@ -277,7 +277,8 @@ tlv_reply_t Shutdown(tlv_request_t const request){
 
         if(request.value.header.account_id == 0) {
                 reply.value.shutdown.active_offices = host.tnum;
-        }else {reply.value.header.ret_code = 5;}
+                reply.value.header.ret_code = RC_OK;
+        }else {reply.value.header.ret_code = RC_OP_NALLOW;}
 
         reply.length = sizeof(reply);
 
@@ -334,29 +335,31 @@ void sendReply(tlv_reply_t reply, int usr_pid, int thread_pid){
 
         //opens the user FIFO to WRITE_ONLY
         if((usr_fifo_id = open(fifoname, O_WRONLY)) == -1) {
-                reply.value.header.ret_code = 3;
-
-                //logging reply
-                if(logReply(srv_log, thread_pid, &reply) < 0) {
-                        perror("user logReply() failed!");
-                }
-
-                perror("open usr fifo failed!");
-        }
-        else{
-                //send reply
-                if(write(usr_fifo_id, &reply, sizeof(reply)) == -1) {
-                        perror("Write reply to user failed!");
-                }
-
-                //closes user FIFO
-                close(usr_fifo_id);
+                reply.value.header.ret_code = RC_USR_DOWN;
 
                 //logging reply
                 if(logReply(srv_log, thread_pid, &reply) < 0) {
                         perror("user logReply() failed!");
                         exit(1);
                 }
+
+                perror("open usr fifo failed!");
+                exit(1);
+        }
+
+        //send reply
+        if(write(usr_fifo_id, &reply, sizeof(reply)) == -1) {
+                perror("Write reply to user failed!");
+                exit(1);
+        }
+
+        //closes user FIFO
+        close(usr_fifo_id);
+
+        //logging reply
+        if(logReply(srv_log, thread_pid, &reply) < 0) {
+                perror("user logReply() failed!");
+                exit(1);
         }
 }
 
@@ -366,7 +369,7 @@ void sendReply(tlv_reply_t reply, int usr_pid, int thread_pid){
  * This insures that each account runs one operation at a time.
  **/
 void operationManagment(tlv_request_t request){
-        
+
         //log request
         if(logRequest(srv_log, currentThreadID(), &request) < 0){
                 perror("server logRequest() failed!");
@@ -386,7 +389,7 @@ void operationManagment(tlv_request_t request){
 
         //delay
         if(request.type != OP_SHUTDOWN){
-                
+
                 //log operation delay
                 if(logSyncDelay(srv_log,currentThreadID(), request.value.header.pid, request.value.header.op_delay_ms) < 0){
                         perror("server logSyncDelay() failed!");

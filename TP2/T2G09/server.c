@@ -87,7 +87,7 @@ void serverFIFOopen(){
         //openning the srv FIFO in READ_ONLY
         if((srv_fifo_id = open(SERVER_FIFO_PATH, O_RDONLY)) == -1) {
                 tlv_reply_t reply;
-                reply.value.header.ret_code = 2;
+                reply.value.header.ret_code = RC_SRV_TIMEOUT;
                 reply.length = sizeof(reply);
 
                 //log reply
@@ -169,7 +169,7 @@ bool validateCredentials(char * request_pass, bank_account_t * bank_account){
 
         strcpy(pass_salt, request_pass);
         strcat(pass_salt, bank_account->salt);
-
+        
         strcpy(hash_compare, hash(pass_salt));
 
         if(strcmp(hash_compare, bank_account->hash) != 0) {
@@ -299,6 +299,8 @@ void serverFIFOclose(){
  * Main funtion.
  **/
 int main(int argc, char const *argv[]){
+
+        unlink(SERVER_FIFO_PATH);
 
         //parses the data provided by the arguments of the shell
         if(!parsingArguments(argc, argv))
